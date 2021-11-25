@@ -5,11 +5,18 @@
 #include "program.h"
 #include "errorLogging.h"
 
-DWORD findPidByName(const char* name);
-bool isProcessAlive(HANDLE process);
-std::string printAllProcesses(DWORD& pid);
-std::string printAllWindows(DWORD& pid);
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+	using PID = DWORD;
+	using PROCESS = HANDLE;
+#elif definded(__linux__)
+
+#endif
+
+PID findPidByName(const char* name);
+bool isProcessAlive(PROCESS process);
+std::string printAllProcesses(PID& pid);
+std::string printAllWindows(PID& pid);
 std::string getLastErrorString();
-void writeMemory(HANDLE process, void *ptr, void* data, size_t size, ErrorLog &errorLog);
-std::vector<void*> findBytePatternInProcessMemory(HANDLE process, void* pattern, size_t patternLen);
-void refindBytePatternInProcessMemory(HANDLE process, void* pattern, size_t patternLen, std::vector<void*>& found);
+void writeMemory(PROCESS process, void *ptr, void* data, size_t size, ErrorLog &errorLog);
+std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen);
+void refindBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen, std::vector<void*>& found);

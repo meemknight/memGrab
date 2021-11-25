@@ -8,6 +8,7 @@
 #include "program.h"
 #include <iostream>
 #include <sstream>
+#include "platformTools.h"
 
 gl2d::Font font;
 gl2d::Texture texture;
@@ -40,7 +41,6 @@ bool gameLogic(float deltaTime)
 	glClear(GL_COLOR_BUFFER_BIT);
 #pragma endregion
 
-
 	ImVec2 vWindowSize = ImGui::GetMainViewport()->Size;
 	ImVec2 vPos0 = ImGui::GetMainViewport()->Pos;
 	ImGui::SetNextWindowPos(ImVec2((float)vPos0.x, (float)vPos0.y), ImGuiCond_Always);
@@ -57,8 +57,6 @@ bool gameLogic(float deltaTime)
 		)
 		)
 	{
-
-		
 
 		static const ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_None;
 		ImGuiID dockSpace = ImGui::GetID("MainWindowDockspace");
@@ -87,7 +85,6 @@ bool gameLogic(float deltaTime)
 
 		if (openWindow)
 		{
-
 
 
 			if (openProgram.pid == 0 && oppenedProgram.pid == 0)

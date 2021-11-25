@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 
-#ifdef _WIN32
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
 
 	#include <Windows.h>
 	
@@ -143,7 +143,6 @@
 		#define permaAssertComment(expression, comment) (void)(								\
 					(!!(expression)) ||														\
 					(assertFuncProduction(#expression, __FILE__, (unsigned)(__LINE__), comment), 1)	\
-
 				)
 		
 	#endif
@@ -163,16 +162,41 @@
 	
 	}
 
+	inline void assertFuncInternal(
+		const char* expression,
+		const char* file_name,
+		unsigned const line_number,
+		const char* comment = "---")
+	{
+		raise(SIGABRT);
+	}
 
+
+	#if INTERNAL_BUILD == 1
+	
 	#define permaAssert(expression) (void)(											\
-					(!!(expression)) ||												\
-					(assertFuncProduction(#expression, __FILE__, (unsigned)(__LINE__)), 0)	\
-				)
-
+						(!!(expression)) ||												\
+						(assertFuncInternal(#expression, __FILE__, (unsigned)(__LINE__)), 0)	\
+					)
+	
 	#define permaAssertComment(expression, comment) (void)(								\
-					(!!(expression)) ||														\
-					(assertFuncProduction(#expression, __FILE__, (unsigned)(__LINE__)), 0, comment)	\
-				)
+						(!!(expression)) ||														\
+						(assertFuncInternal(#expression, __FILE__, (unsigned)(__LINE__), comment), 1)	\
+					)
+	
+	#else
+	
+	#define permaAssert(expression) (void)(											\
+						(!!(expression)) ||												\
+						(assertFuncProduction(#expression, __FILE__, (unsigned)(__LINE__)), 0)	\
+					)
+	
+	#define permaAssertComment(expression, comment) (void)(								\
+						(!!(expression)) ||														\
+						(assertFuncProduction(#expression, __FILE__, (unsigned)(__LINE__), comment), 1)	\
+					)
+	
+	#endif
 
 
 #endif

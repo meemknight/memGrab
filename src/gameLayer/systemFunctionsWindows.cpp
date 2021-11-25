@@ -1,6 +1,8 @@
 //http://kylehalladay.com/blog/2020/05/20/Hooking-Input-Snake-In-Notepad.html
 //https://github.com/milkdevil/injectAllTheThings
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+
 #include <Windows.h>
 #include <TlHelp32.h>
 #include "systemFunctions.h"
@@ -11,7 +13,7 @@
 #undef min
 #undef max
 
-DWORD findPidByName(const char* name)
+PID findPidByName(const char* name)
 {
 	HANDLE h;
 	PROCESSENTRY32 singleProcess;
@@ -39,7 +41,7 @@ DWORD findPidByName(const char* name)
 }
 
 
-std::string printAllProcesses(DWORD &pid)
+std::string printAllProcesses(PID& pid)
 {
 	ImGui::PushID(30000);
 	HANDLE h;
@@ -194,7 +196,7 @@ BOOL CALLBACK EnumWindowsProc(
 	return true;
 }
 
-std::string printAllWindows(DWORD& pid)
+std::string printAllWindows(PID& pid)
 {
 	ImGui::PushID(20000);
 
@@ -303,7 +305,7 @@ std::string getLastErrorString()
 	return message;
 }
 
-void writeMemory(HANDLE process, void* ptr, void* data, size_t size, ErrorLog& errorLog)
+void writeMemory(PROCESS process, void* ptr, void* data, size_t size, ErrorLog& errorLog)
 {
 
 	errorLog.clearError();
@@ -323,7 +325,7 @@ void writeMemory(HANDLE process, void* ptr, void* data, size_t size, ErrorLog& e
 }
 
 
-bool isProcessAlive(HANDLE process)
+bool isProcessAlive(PROCESS process)
 {
 	DWORD exitCode = 0;
 
@@ -333,7 +335,7 @@ bool isProcessAlive(HANDLE process)
 }
 
 //http://kylehalladay.com/blog/2020/05/20/Rendering-With-Notepad.html
-std::vector<void*> findBytePatternInProcessMemory(HANDLE process, void* pattern, size_t patternLen)
+std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen)
 {
 	if (patternLen == 0) { return {}; }
 
@@ -384,11 +386,9 @@ std::vector<void*> findBytePatternInProcessMemory(HANDLE process, void* pattern,
 }
 
 
-
-void refindBytePatternInProcessMemory(HANDLE process, void* pattern, size_t patternLen, std::vector<void*> &found)
+void refindBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen, std::vector<void*> &found)
 {
 	if (patternLen == 0) { return; }
-
 	
 	std::vector<void*> newFound;
 	newFound.reserve(found.size());
@@ -438,10 +438,11 @@ void refindBytePatternInProcessMemory(HANDLE process, void* pattern, size_t patt
 	std::set_intersection(found.begin(), found.end(),
 		newFound.begin(), newFound.end(),
 		intersect.begin());
-	
 
 	intersect.erase(std::remove(intersect.begin(), intersect.end(), nullptr), intersect.end());
 
 	found = std::move(intersect);
 
 }
+
+#endif
