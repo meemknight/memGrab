@@ -65,81 +65,76 @@ bool gameLogic(float deltaTime)
 
 		static bool openWindow=1;
 
+		static OppenedProgram oppenedProgram;
+		static OpenProgram openProgram;
+
 		if (ImGui::BeginMenuBar())
 		{
 
-			if (ImGui::BeginMenu("windows "))
+			if (ImGui::BeginMenu("Open..."))
 			{
-				ImGui::Checkbox("Open:", &openWindow);
+				//ImGui::Checkbox("Open:", &openWindow);
+
+				{
+
+					//ImGui::Begin("Open##open and use process", &openWindow);
+
+					openProgram.render();
+
+					openProgram.fileOpenLog.renderText();
+
+					//ImGui::End();
+
+				}
+				
+				
 				ImGui::EndMenu();
 			}
 
-			
 
 
 			ImGui::EndMenuBar();
 		}
-
-		static OppenedProgram oppenedProgram;
-		static OpenProgram openProgram;
-
-		if (openWindow)
+		
+		if (!(openProgram.pid == 0 && oppenedProgram.pid == 0))
 		{
 
-
-			if (openProgram.pid == 0 && oppenedProgram.pid == 0)
+			if (openProgram.pid)
 			{
-				ImGui::Begin("Open##open and use process", &openWindow);
+				{
+					oppenedProgram.pid = openProgram.pid;
+					openProgram.pid = 0;
 
+					oppenedProgram.handleToProcess = openProgram.handleToProcess;
+					openProgram.handleToProcess = 0;
 
-				openProgram.render();
+					strcpy(oppenedProgram.currentPocessName, openProgram.currentPocessName);
+					openProgram.currentPocessName[0] = 0;
 
-				openProgram.fileOpenLog.renderText();
+				}
+			}
+
+			if (oppenedProgram.pid)
+			{
+				std::stringstream s;
+				s << "Process: ";
+				s << oppenedProgram.pid;
+				s << "##open and use process";
+				ImGui::Begin(s.str().c_str());
+
+				if (!oppenedProgram.isAlieve())
+				{
+					openProgram.fileOpenLog.setError("process closed", openProgram.fileOpenLog.info);
+					oppenedProgram.writeLog.clearError();
+
+					oppenedProgram.pid = 0;
+					oppenedProgram.handleToProcess = 0;
+					oppenedProgram.currentPocessName[0] = 0;
+				}
+
+				oppenedProgram.render();
 
 				ImGui::End();
-			}
-			else
-			{
-				
-
-				if (openProgram.pid)
-				{
-					{
-						oppenedProgram.pid = openProgram.pid;
-						openProgram.pid = 0;
-
-						oppenedProgram.handleToProcess = openProgram.handleToProcess;
-						openProgram.handleToProcess = 0;
-
-						strcpy(oppenedProgram.currentPocessName, openProgram.currentPocessName);
-						openProgram.currentPocessName[0] = 0;
-
-					}
-				}
-
-				if (oppenedProgram.pid)
-				{
-					std::stringstream s;
-					s << "Process: ";
-					s << oppenedProgram.pid;
-					s << "##open and use process";
-					ImGui::Begin(s.str().c_str());
-
-					if (!oppenedProgram.isAlieve())
-					{
-						openProgram.fileOpenLog.setError("process closed", openProgram.fileOpenLog.info);
-						oppenedProgram.writeLog.clearError();
-
-						oppenedProgram.pid = 0;
-						oppenedProgram.handleToProcess = 0;
-						oppenedProgram.currentPocessName[0] = 0;
-					}
-
-					oppenedProgram.render();
-
-					ImGui::End();
-				}
-
 			}
 
 		}
