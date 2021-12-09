@@ -65,84 +65,87 @@ bool gameLogic(float deltaTime)
 
 		static bool openWindow=1;
 
-		static OppenedProgram oppenedProgram;
+		//static OppenedProgram oppenedProgram;
 		static OpenProgram openProgram;
+		static std::vector<OppenedProgram> programsOppened;
 
 		if (ImGui::BeginMenuBar())
 		{
 
 			if (ImGui::BeginMenu("Open..."))
 			{
-				//ImGui::Checkbox("Open:", &openWindow);
 
-				{
+				openProgram.render();
 
-					//ImGui::Begin("Open##open and use process", &openWindow);
-
-					openProgram.render();
-
-					openProgram.fileOpenLog.renderText();
-
-					//ImGui::End();
-
-				}
-				
+				openProgram.fileOpenLog.renderText();
 				
 				ImGui::EndMenu();
 			}
 
 
-
 			ImGui::EndMenuBar();
 		}
-		
-		if (!(openProgram.pid == 0 && oppenedProgram.pid == 0))
+
+		if (openProgram.pid)
 		{
-
-			if (openProgram.pid)
+			//first check if already oopened
+			auto found = std::find_if(programsOppened.begin(), programsOppened.end(), [pid = openProgram.pid](const OppenedProgram& p)
 			{
-				{
-					oppenedProgram.pid = openProgram.pid;
-					openProgram.pid = 0;
+				return p.pid == pid;
+			});
 
-					oppenedProgram.handleToProcess = openProgram.handleToProcess;
-					openProgram.handleToProcess = 0;
-
-					strcpy(oppenedProgram.currentPocessName, openProgram.currentPocessName);
-					openProgram.currentPocessName[0] = 0;
-
-				}
-			}
-
-			if (oppenedProgram.pid)
+			if (found == programsOppened.end())
 			{
-				std::stringstream s;
-				s << "Process: ";
-				s << oppenedProgram.pid;
-				s << "##open and use process";
-				ImGui::Begin(s.str().c_str());
+				OppenedProgram newProgram;
+				newProgram.isOppened = true;
 
-				if (!oppenedProgram.isAlieve())
-				{
-					openProgram.fileOpenLog.setError("process closed", openProgram.fileOpenLog.info);
-					oppenedProgram.writeLog.clearError();
+				newProgram.pid = openProgram.pid;
+				openProgram.pid = 0;
 
-					oppenedProgram.pid = 0;
-					oppenedProgram.handleToProcess = 0;
-					oppenedProgram.currentPocessName[0] = 0;
-				}
+				newProgram.handleToProcess = openProgram.handleToProcess;
+				openProgram.handleToProcess = 0;
 
-				oppenedProgram.render();
+				strcpy(newProgram.currentPocessName, openProgram.currentPocessName);
+				openProgram.currentPocessName[0] = 0;
 
-				ImGui::End();
+				programsOppened.push_back(newProgram);
 			}
+			else
+			{
+				openProgram.fileOpenLog.setError("Process already oppened.", ErrorLog::ErrorType::info);
+				CloseHandle(openProgram.handleToProcess);
+				openProgram.pid = 0;
+				openProgram.currentPocessName[0] = 0;
+				openProgram.handleToProcess = 0;
 
+			}
+			
 		}
 
+		//if (oppenedProgram.pid)
+		for(int i=0; i<programsOppened.size(); i++)
+		{
+			auto& program = programsOppened[i];
+
+			if (!program.isAlieve())
+			{
+				//openProgram.fileOpenLog.setError("process closed", openProgram.fileOpenLog.info);
+				program.writeLog.clearError();
+
+				program.close();
+				program.errorLog.setError("process closed", openProgram.fileOpenLog.info);
+			}
+
+			if(!program.render())
+			{
+				program.close();
+				programsOppened.erase(programsOppened.begin() + i);
+				i--;
+			}
+		}
 
 		ImGui::End();
 	}
-
 
 	//ImGui::ShowDemoWindow();
 

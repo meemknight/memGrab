@@ -211,13 +211,16 @@ struct SearchForValue
 
 struct OppenedProgram
 {
+	bool isOppened = 0;
 	DWORD pid = 0;
 	HANDLE handleToProcess = 0;
 	char currentPocessName[256] = {};
 	ErrorLog writeLog;
+	ErrorLog errorLog;
 	SearchForValue searcher;
 
 	bool isAlieve();
-	void render();
+	bool render();
+	void close();
 
 };

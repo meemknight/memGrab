@@ -61,12 +61,13 @@ std::string printAllProcesses(PID& pid)
 
 	int index = 0;
 	static int itemCurrent = 0;
-	static int lastItemCurrent = 0;
+	static int lastItemCurrent = -1;
 	bool found = 0;
 
 	while (Process32Next(h, &singleProcess))
 	{
-		
+		if (singleProcess.th32ProcessID == 0) { continue; } //ignore system process
+
 		if (index >= processesNames.size())
 		{
 			processesNames.push_back(new char[MAX_PATH]);
@@ -99,10 +100,14 @@ std::string printAllProcesses(PID& pid)
 	{
 		itemCurrent = 0;
 		lastPid = 0;
+		lastItemCurrent = -1;
+	}
+	else
+	{
+		lastItemCurrent = itemCurrent;
 	}
 
 	CloseHandle(h);
-	lastItemCurrent = itemCurrent;
 
 	ImGui::Combo("##processes list box", &itemCurrent, &processesNames[0], index);
 
@@ -214,15 +219,14 @@ std::string printAllWindows(PID& pid)
 		i[0] = '\0';
 	}
 
-	static int itemCurrent = 0;
+	static int itemCurrent = -1;
 	static int lastItemCurrent = 0;
 	bool found = 0;
 	int index = 0;
 
-
 	setNameOfProcesses();
 
-	for(; index < windows.size(); index++)
+	for(index = 0; index < windows.size(); index++)
 	{
 
 		if (index >= processesNames.size())
@@ -258,9 +262,12 @@ std::string printAllWindows(PID& pid)
 	{
 		itemCurrent = 0;
 		lastPid = 0;
+		lastItemCurrent = -1;
 	}
-
-	lastItemCurrent = itemCurrent;
+	else
+	{
+		lastItemCurrent = itemCurrent;
+	}
 
 	ImGui::Combo("##windows list box", &itemCurrent, &processesNames[0], index);
 

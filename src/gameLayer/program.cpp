@@ -7,7 +7,6 @@
 #undef min
 #undef max
 
-
 void OpenProgram::render()
 {
 
@@ -180,15 +179,18 @@ void *SearchForValue::render(HANDLE handle)
 	return foundPtr;
 }
 
-void OppenedProgram::render()
+bool OppenedProgram::render()
 {
-	
+	std::stringstream s;
+	s << "Process: ";
+	s << currentPocessName << "##" << pid << "open and use process";
+	bool oppened = 1;
+	ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoSavedSettings);
 
-	if (pid != 0)
+	if (pid != 0 && isOppened)
 	{
 		ImGui::PushID(pid);
 		//ImGui::Begin(currentPocessName);
-
 
 		ImGui::Text("Process id: %d, name: %s", pid, currentPocessName);
 		static int v = 0;
@@ -238,16 +240,33 @@ void OppenedProgram::render()
 			memLocation = searched;
 		}
 
-
 		//ImGui::End();
 		ImGui::PopID();
 	}
+	else
+	{
+		ImGui::Text("Process name: %s", currentPocessName);
+	}
 
+	errorLog.renderText();
+
+	ImGui::End();
+
+	return oppened;
+}
+
+void OppenedProgram::close()
+{
+	CloseHandle(handleToProcess);
+	isOppened = 0;
+	handleToProcess = 0;
+	searcher.clear();
 }
 
 bool OppenedProgram::isAlieve()
 {
-	if (!pid) { return true; }
+	if (!pid) { return false; }
+	if (!isOppened) { return false; }
 
 	if (isProcessAlive(handleToProcess))
 	{
