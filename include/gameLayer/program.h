@@ -3,8 +3,16 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <Windows.h>
 #include "errorLogging.h"
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#include <Windows.h>
+
+using PID = DWORD;
+using PROCESS = HANDLE;
+#elif definded(__linux__)
+
+#endif
 
 #ifdef _MSC_VER
 #define IM_PRId64   "I64d"
@@ -189,8 +197,8 @@ inline void typeInput(GenericType& data, bool* pressedEnter = 0, bool* changed =
 struct OpenProgram
 {
 	ErrorLog fileOpenLog;
-	DWORD pid = 0;
-	HANDLE handleToProcess = 0;
+	PID pid = 0;
+	PROCESS handleToProcess = 0;
 	char currentPocessName[256] = {};
 
 	void render();
@@ -203,7 +211,7 @@ struct SearchForValue
 	int currentItem = 0;
 
 	void clear();
-	void* render(HANDLE id);
+	void* render(PROCESS id);
 
 	std::vector<void*> foundValues;
 	std::vector<char*> foundValuesText;
@@ -212,8 +220,8 @@ struct SearchForValue
 struct OppenedProgram
 {
 	bool isOppened = 0;
-	DWORD pid = 0;
-	HANDLE handleToProcess = 0;
+	PID pid = 0;
+	PROCESS handleToProcess = 0;
 	char currentPocessName[256] = {};
 	ErrorLog writeLog;
 	ErrorLog errorLog;

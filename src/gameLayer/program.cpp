@@ -54,18 +54,13 @@ void OpenProgram::render()
 			else
 			{
 				strcpy(currentPocessName, processName.c_str());
-				handleToProcess = OpenProcess(
-					PROCESS_VM_READ |
-					PROCESS_QUERY_INFORMATION |
-					PROCESS_VM_WRITE |
-					PROCESS_VM_OPERATION, 0, pid);
+				handleToProcess = openProcessFromPid(pid);
 
-				if ((handleToProcess == INVALID_HANDLE_VALUE) || (handleToProcess == 0))
+				if (handleToProcess == 0)
 				{
 					std::string s = "couldn't open process\n";
 					s += getLastErrorString();
 					fileOpenLog.setError(s.c_str());
-					handleToProcess = 0;
 					pid = 0;
 				}
 			}
@@ -77,7 +72,6 @@ void OpenProgram::render()
 	ImGui::Separator();
 
 }
-
 
 void SearchForValue::clear()
 {
