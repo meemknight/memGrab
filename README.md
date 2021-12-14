@@ -3,6 +3,8 @@
 
 Features and todos:
 
+- [x] Windows
+- [ ] Linux
 - [x] Open processes from name
 - [x] Open processes from oppened windows
 - [x] Search of values in memory
