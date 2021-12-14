@@ -16,7 +16,7 @@ void OpenProgram::render()
 
 	if (ImGui::BeginTabBar("##open selector"))
 	{
-		DWORD selectedP = 0;
+		PID selectedP = 0;
 		std::string processName = "";
 		bool open = 0;
 
@@ -81,7 +81,7 @@ void SearchForValue::clear()
 	str = {};
 }
 
-void *SearchForValue::render(HANDLE handle)
+void *SearchForValue::render(PROCESS handle)
 {
 	ImGui::PushID(handle);
 
@@ -147,8 +147,8 @@ void *SearchForValue::render(HANDLE handle)
 		}
 
 
-		ImGui::Text("Found pointers: %d", foundValues.size());
-		ImGui::ListBox("##found pointers", &currentItem, &foundValuesText[0], foundValues.size(), std::min(10ull, foundValues.size()));
+		ImGui::Text("Found pointers: %d", (int)foundValues.size());
+		ImGui::ListBox("##found pointers", &currentItem, &foundValuesText[0], foundValues.size(), std::min((decltype(foundValues.size()))10ull, foundValues.size()));
 		
 		if (currentItem < foundValues.size())
 		{
@@ -186,7 +186,7 @@ bool OppenedProgram::render()
 		ImGui::PushID(pid);
 		//ImGui::Begin(currentPocessName);
 
-		ImGui::Text("Process id: %d, name: %s", pid, currentPocessName);
+		ImGui::Text("Process id: %d, name: %s", (int)pid, currentPocessName);
 		static int v = 0;
 		ImGui::NewLine();
 
@@ -251,7 +251,7 @@ bool OppenedProgram::render()
 
 void OppenedProgram::close()
 {
-	CloseHandle(handleToProcess);
+	closeProcess(handleToProcess);
 	isOppened = 0;
 	handleToProcess = 0;
 	searcher.clear();

@@ -2,7 +2,6 @@
 #include <GLFW/glfw3.h>
 #include <stb_image/stb_image.h>
 #include <stb_truetype/stb_truetype.h>
-#include "gl2d/gl2d.h"
 #include <iostream>
 #include <ctime>
 #include "platformTools.h"
@@ -35,7 +34,6 @@ bool currentFullScreen = 0;
 bool fullScreen = 0;
 
 #pragma endregion
-
 
 
 void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods)
@@ -304,20 +302,16 @@ int main()
 	glfwSetWindowSizeCallback(wind, windowSizeCallback);
 	glfwSetCursorPosCallback(wind, cursorPositionCallback);
 
+	gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 	permaAssertComment(gladLoadGL(), "err initializing glad");
 
-#pragma endregion
-
-#pragma region gl2d
-	gl2d::init();
 #pragma endregion
 
 
 #pragma region imgui
 	#if REMOVE_IMGUI == 0
 		ImGui::CreateContext();
-		//ImGui::StyleColorsDark();
-		imguiThemes::embraceTheDarkness();
+		
 
 		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -326,7 +320,8 @@ int main()
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
 		//io.ConfigViewportsNoAutoMerge = true;
 		//io.ConfigViewportsNoTaskBarIcon = true;
-	
+		
+		imguiThemes::embraceTheDarkness();
 		ImGuiStyle& style = ImGui::GetStyle();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
@@ -334,9 +329,9 @@ int main()
 			style.Colors[ImGuiCol_WindowBg].w = 0.f;
 			style.Colors[ImGuiCol_DockingEmptyBg].w = 0.f;
 		}
-	
+
 		ImGui_ImplGlfw_InitForOpenGL(wind, true);
-		ImGui_ImplOpenGL3_Init("#version 330");
+		ImGui_ImplOpenGL3_Init("#version 120");
 	#endif
 #pragma endregion
 
@@ -396,7 +391,7 @@ int main()
 
 		if (!gameLogic(augmentedDeltaTime))
 		{
-			return 0;
+			return 0; //todo call game end ?
 		}
 
 	#pragma endregion

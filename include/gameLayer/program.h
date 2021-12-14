@@ -5,13 +5,16 @@
 #include <vector>
 #include "errorLogging.h"
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#define MAX_PATH_COMMON 256
+
+#if defined WIN32 || defined _WIN32 || defined __WIN32__ || defined __NT__
 #include <Windows.h>
 
 using PID = DWORD;
 using PROCESS = HANDLE;
-#elif definded(__linux__)
-
+#elif defined __linux__ 
+	using PID = int;
+	using PROCESS = PID; //?
 #endif
 
 #ifdef _MSC_VER
@@ -40,7 +43,7 @@ enum Types
 	typesCount
 };
 
-constexpr char* types[] = 
+constexpr const char* types[] = 
 {
 	"signed8",
 	"unsigned8",

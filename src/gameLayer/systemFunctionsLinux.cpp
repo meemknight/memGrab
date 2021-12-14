@@ -1,4 +1,4 @@
-#if definded(__linux__)
+#if defined __linux__
 #include "systemFunctions.h"
 #include "imgui.h"
 #include <vector>
@@ -11,6 +11,7 @@
 
 
 //returns 0 on failure
+//probably remove
 PID findPidByName(const char* name)
 {
 	return 0;
@@ -23,16 +24,21 @@ bool isProcessAlive(PROCESS process)
 }
 
 //gets a list of all the processes, you should ignore the system process(the one with pid 0)
-std::vector<std::pair<std::string, PID>> getAllProcesses();
+std::vector<std::pair<std::string, PID>> getAllProcesses()
+{
+	return {};
+}
 
-//gets a list of all windows
-std::vector<ProcessWindow> getAllWindows();
-
+//gets a list of all windows, you should ignore the system process(the one with pid 0)
+std::vector<ProcessWindow> getAllWindows()
+{
+	return {};
+}
 
 //gets last error as a string
 std::string getLastErrorString()
 {
-	return ""
+	return "";
 }
 
 
@@ -40,6 +46,10 @@ std::string getLastErrorString()
 void writeMemory(PROCESS process, void* ptr, void* data, size_t size, ErrorLog& errorLog)
 {
 
+	//if (!writeSucceeded) //exaple setting error
+	//{
+	//	errorLog.setError(getLastErrorString().c_str());
+	//}
 }
 
 
@@ -54,9 +64,13 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 //on linux will probably just return the pid or sthing
 PROCESS openProcessFromPid(PID pid)
 {
-	return 0;
+	return pid; //?
 }
 
+void closeProcess(PROCESS process)
+{
+	//do nothing
 
+}
 
 #endif

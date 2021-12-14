@@ -89,7 +89,7 @@ void platform::internal::setRightMouseState(int newState)
 
 }
 
-void platform::internal::resetButtonToZero(Button &b)
+void inline platform::internal::resetButtonToZero(Button &b)
 {
 	b.pressed = 0;
 	b.held = 0;

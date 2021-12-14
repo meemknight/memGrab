@@ -1,5 +1,4 @@
 #pragma once
-#include <Windows.h>
 #include <string>
 #include <vector>
 #include "program.h"
@@ -23,6 +22,7 @@ std::string printAllWindows(PID& pid);
 
 //returns 0 on fail
 PROCESS openProcessFromPid(PID pid);
+void closeProcess(PROCESS process);
 
 std::string getLastErrorString();
 void writeMemory(PROCESS process, void *ptr, void* data, size_t size, ErrorLog &errorLog);

@@ -2,5 +2,6 @@
 bin/
 build/
 /.vs
+.vs/
 .idea/
 CMakeSettings.json

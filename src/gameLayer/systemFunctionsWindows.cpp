@@ -1,7 +1,7 @@
 //http://kylehalladay.com/blog/2020/05/20/Hooking-Input-Snake-In-Notepad.html
 //https://github.com/milkdevil/injectAllTheThings
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#if defined WIN32 || defined _WIN32 || defined __WIN32__ || defined __NT__
 
 #include <Windows.h>
 #include <TlHelp32.h>
@@ -253,24 +253,6 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 	return returnVec;
 }
 
-void refindBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen, std::vector<void*>& found)
-{
-	if (patternLen == 0) { return; }
-
-	auto newFound = findBytePatternInProcessMemory(process, pattern, patternLen);
-
-	std::vector<void*> intersect;
-	intersect.resize(std::min(found.size(), newFound.size()));
-
-	std::set_intersection(found.begin(), found.end(),
-		newFound.begin(), newFound.end(),
-		intersect.begin());
-
-	intersect.erase(std::remove(intersect.begin(), intersect.end(), nullptr), intersect.end());
-
-	found = std::move(intersect);
-}
-
 PROCESS openProcessFromPid(PID pid)
 {
 
@@ -286,6 +268,11 @@ PROCESS openProcessFromPid(PID pid)
 	}
 
 	return handleToProcess;
+}
+
+void closeProcess(PROCESS process)
+{
+	CloseHandle(process);
 }
 
 

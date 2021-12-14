@@ -1,5 +1,5 @@
 #include "gameLayer.h"
-#include "gl2d/gl2d.h"
+#include <glad/glad.h>
 #include "platformInput.h"
 #include "imgui.h"
 #include "imguiThemes.h"
@@ -9,9 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include "platformTools.h"
-
-gl2d::Font font;
-gl2d::Texture texture;
+#include <algorithm>
 
 struct GameData
 {
@@ -86,6 +84,7 @@ bool gameLogic(float deltaTime)
 			ImGui::EndMenuBar();
 		}
 
+
 		if (openProgram.pid)
 		{
 			//first check if already oopened
@@ -113,7 +112,7 @@ bool gameLogic(float deltaTime)
 			else
 			{
 				openProgram.fileOpenLog.setError("Process already oppened.", ErrorLog::ErrorType::info);
-				CloseHandle(openProgram.handleToProcess);
+				closeProcess(openProgram.handleToProcess);
 				openProgram.pid = 0;
 				openProgram.currentPocessName[0] = 0;
 				openProgram.handleToProcess = 0;

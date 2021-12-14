@@ -3,6 +3,9 @@
 #include <vector>
 #include <algorithm>
 
+#undef min
+#undef max
+
 std::string printAllProcesses(PID& pid)
 {
 	ImGui::PushID(30000);
@@ -78,7 +81,7 @@ std::string printAllWindows(PID& pid)
 	auto windows = getAllWindows();
 
 	static std::vector<char*> processesNames;
-	static DWORD lastPid = 0;
+	static PID lastPid = 0;
 
 	processesNames.reserve(500); //todo fix later
 	for (auto& i : processesNames)
@@ -96,7 +99,7 @@ std::string printAllWindows(PID& pid)
 
 		if (index >= processesNames.size())
 		{
-			processesNames.push_back(new char[MAX_PATH]);
+			processesNames.push_back(new char[MAX_PATH_COMMON]);
 		}
 
 		strcpy(processesNames[index], windows[index].windowName.c_str()); //todo
@@ -148,4 +151,22 @@ std::string printAllWindows(PID& pid)
 		return "";
 	}
 
+}
+
+void refindBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen, std::vector<void*>& found)
+{
+	if (patternLen == 0) { return; }
+
+	auto newFound = findBytePatternInProcessMemory(process, pattern, patternLen);
+
+	std::vector<void*> intersect;
+	intersect.resize(std::min(found.size(), newFound.size()));
+
+	std::set_intersection(found.begin(), found.end(),
+		newFound.begin(), newFound.end(),
+		intersect.begin());
+
+	intersect.erase(std::remove(intersect.begin(), intersect.end(), nullptr), intersect.end());
+
+	found = std::move(intersect);
 }
