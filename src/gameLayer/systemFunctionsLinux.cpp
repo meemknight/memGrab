@@ -164,52 +164,34 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 
 	char* basePtr = (char*)0x0;
 
-	int mi = 0;
-
-	if(mapsInit(&mi, getpid()) < 0)
+	if(mapsInit(process) < 0)
     	return {};
 
 	void* low;
 	void* hi;
 
-	while(mapsNext(&mi, &low, &hi)) 
-	{
-		struct dl_phdr_info info;
-		info.dlpi_name = mi.path;
-		info.dlpi_addr = low;
-	}
-
-	while (VirtualQueryEx(process, (void*)basePtr, &memInfo, sizeof(MEMORY_BASIC_INFORMATION)))
+	while (mapsNext(&low, &hi))
 	{
 		
-		if (memInfo.State == MEM_COMMIT && memInfo.Protect == PAGE_READWRITE)
+		//search for our patern
+		char* remoteMemRegionPtr = (char*)low;
+		char* localCopyContents = new char[(char*)hi-(char*)low];
+		size_t bytesRead = 0;
+		if (ReadProcessMemory(process, memInfo.BaseAddress, localCopyContents, memInfo.RegionSize, &bytesRead))
 		{
-			//search for our patern
-			char* remoteMemRegionPtr = (char*)memInfo.BaseAddress;
-			char* localCopyContents = new char[memInfo.RegionSize];
-
-			SIZE_T bytesRead = 0;
-			if (ReadProcessMemory(process, memInfo.BaseAddress, localCopyContents, memInfo.RegionSize, &bytesRead))
+			char* cur = localCopyContents;
+			size_t curPos = 0;
+			while (curPos < memInfo.RegionSize - patternLen + 1)
 			{
-				char* cur = localCopyContents;
-				size_t curPos = 0;
-
-				while (curPos < memInfo.RegionSize - patternLen + 1)
+				if (memcmp(cur, pattern, patternLen) == 0)
 				{
-					if (memcmp(cur, pattern, patternLen) == 0)
-					{
-						returnVec.push_back((char*)memInfo.BaseAddress + curPos);
-					}
-
-					curPos++;
-					cur++;
+					returnVec.push_back((char*)memInfo.BaseAddress + curPos);
 				}
-
-
+				curPos++;
+				cur++;
 			}
-
-			delete[] localCopyContents;
 		}
+		delete[] localCopyContents;
 
 		basePtr = (char*)memInfo.BaseAddress + memInfo.RegionSize;
 	}
