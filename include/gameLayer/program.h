@@ -13,7 +13,7 @@
 using PID = DWORD;
 using PROCESS = HANDLE;
 #elif defined __linux__ 
-	using PID = int;
+	using PID = pid_t;
 	using PROCESS = PID; //?
 #endif
 
