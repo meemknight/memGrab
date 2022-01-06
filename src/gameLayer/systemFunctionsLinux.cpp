@@ -213,28 +213,27 @@ int mapsInit(pid_t pid)
 	return 1;
 }
 
-
-void mapClose(int* fd)
-{
-	close(*fd);
-}
-
 bool mapsNext(void** low, void** hi)
 {
 	if(mapData.eof()){return false;}
 
+	std::string line;
+	std::getline(mapData, line);
+
+	std::stringstream lineStream(line);
+
 	std::string adress;
 	std::string permisions;
-	size_t offset;
+	std::string offset;
 	std::string device;
-	long inode;
+	std::string inode;
 	std::string pathName;
 
-	mapData >> adress >> permisions >> offset >> device >> inode >> pathName;
+	lineStream >> adress >> permisions >> offset >> device >> inode >> pathName;
 
 	auto pos = adress.find('-');
 
-	if(pos != adress.npos)
+	if(pos == adress.npos)
 	{
 		return false;
 	}
@@ -242,8 +241,11 @@ bool mapsNext(void** low, void** hi)
 	std::string beg(adress.begin(), adress.begin() + pos);
 	std::string end(adress.begin() + pos + 1, adress.end());
 
-	*low = (void*)atoll(beg.c_str()); 
-	*hi = (void*)atoll(end.c_str()); 
+	size_t lowVal = std::stoull(beg, 0, 16);
+	size_t highVal = std::stoull(end, 0, 16);
+
+	*low = (void*)lowVal; 
+	*hi = (void*)highVal;
 
 	return true;
 }
@@ -256,8 +258,6 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 	std::vector<void*> returnVec;
 	returnVec.reserve(1000);
 
-	char* basePtr = (char*)0x0;
-
 	if(mapsInit(process) < 0)
     	return {};
 
@@ -266,12 +266,9 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 
 	while (mapsNext(&low, &hi))
 	{
-		
-		//search for our patern
-		char* remoteMemRegionPtr = (char*)low;
+		//search for our byte patern
 		size_t size = (char*)hi-(char*)low + 1;
-		char* localCopyContents = new char[(char*)hi-(char*)low];
-		size_t bytesRead = 0;
+		char* localCopyContents = new char[size];
 		if (
 			readMemory(process, low, size, localCopyContents)
 		)
@@ -290,7 +287,6 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 		}
 		delete[] localCopyContents;
 
-		basePtr = (char*)low + size;
 	}
 
 	return returnVec;
