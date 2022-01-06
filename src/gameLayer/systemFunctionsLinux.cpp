@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 //PID is just a number
 //PROCESS is a handle in windows
@@ -23,6 +24,7 @@
 //probably remove
 PID findPidByName(const char* name)
 {
+
 	return 0;
 }
 
@@ -48,10 +50,41 @@ bool isProcessAlive(PROCESS process)
 	
 }
 
+bool isNumber(const std::string& str)
+{
+    for (char const &c : str)
+	{
+        if (std::isdigit(c) == 0) return false;
+    }
+    return true;
+}
+
 //gets a list of all the processes, you should ignore the system process(the one with pid 0)
 std::vector<std::pair<std::string, PID>> getAllProcesses()
 {
-	return {};
+	std::vector<std::pair<std::string, PID>> returnVector;
+	for(const auto &i: std::filesystem::directory_iterator("/proc"))
+	{
+		std::pair<std::string, PID> entry;
+		entry.first = i.path().filename();
+
+		if (isNumber(entry.first))
+		{
+			entry.second = std::atoi(entry.first.c_str());
+
+			auto path = "/proc/" + entry.first + "/comm";
+
+			std::ifstream file(path);
+			std::string name;
+			file >> name;
+			file.close();
+			entry.first = name;
+
+			returnVector.push_back(std::move(entry));
+		}
+	}
+
+	return returnVector;
 }
 
 //gets a list of all windows, you should ignore the system process(the one with pid 0)
