@@ -29,7 +29,23 @@ PID findPidByName(const char* name)
 //returns 0 if not alive or not existing
 bool isProcessAlive(PROCESS process)
 {
-	return 0;
+	struct stat sts = {};
+
+	// creating a string and pass it as a parameter for the stat function
+	std::string passingString = "/proc/";
+
+	// add the process parameter to the string
+	passingString += std::to_string(process);
+
+	// https://stackoverflow.com/questions/9152979/check-if-process-exists-given-its-pid
+	if(stat(passingString.c_str(), &sts) == -1 && errno == ENOENT)
+	{
+		// this means that the process doesn't exist
+		return 0;
+	}
+
+	return 1;
+	
 }
 
 //gets a list of all the processes, you should ignore the system process(the one with pid 0)
