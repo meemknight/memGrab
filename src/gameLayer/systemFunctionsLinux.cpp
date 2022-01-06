@@ -233,13 +233,17 @@ bool mapsNext(void** low, void** hi)
 	mapData >> adress >> permisions >> offset >> device >> inode >> pathName;
 
 	auto pos = adress.find('-');
+
+	if(pos != adress.npos)
+	{
+		return false;
+	}
+
 	std::string beg(adress.begin(), adress.begin() + pos);
 	std::string end(adress.begin() + pos + 1, adress.end());
 
 	*low = (void*)atoll(beg.c_str()); 
 	*hi = (void*)atoll(end.c_str()); 
-
-
 
 	return true;
 }
