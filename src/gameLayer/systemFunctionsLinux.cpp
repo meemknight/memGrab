@@ -51,6 +51,45 @@ std::string getLastErrorString()
 }
 
 
+bool readMemory(PROCESS process, void* start, size_t size, void *buff)
+{
+	char file[256]={};
+	sprintf(file, "/proc/%ld/mem", (long)process);
+	int fd = open(file, O_RDWR);
+
+	if(fd == -1)
+	{
+		return 0;
+	}
+
+	if(ptrace(PTRACE_ATTACH, process, 0, 0) == -1)
+	{
+		close(fd);
+		return 0;
+	}
+
+	if(waitpid(process, NULL, 0) == -1)
+	{
+		ptrace(PTRACE_DETACH, process, 0, 0);
+		close(fd);
+		return 0;
+	}
+
+	off_t addr = (off_t)start; // target process address
+
+	if(pread(fd, buff, size, addr) == -1)
+	{
+		ptrace(PTRACE_DETACH, process, 0, 0);
+		close(fd);
+		return 0;
+	}
+
+	ptrace(PTRACE_DETACH, process, 0, 0);
+	close(fd);
+
+	return 1;
+}
+
 //writes memory in the process' space
 void writeMemory(PROCESS process, void* ptr, void* data, size_t size, ErrorLog& errorLog)
 {
@@ -151,6 +190,8 @@ bool mapsNext(void** low, void** hi)
 	*low = (void*)atoll(beg.c_str()); 
 	*hi = (void*)atoll(end.c_str()); 
 
+
+
 	return true;
 }
 
@@ -175,17 +216,20 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 		
 		//search for our patern
 		char* remoteMemRegionPtr = (char*)low;
+		size_t size = (char*)hi-(char*)low + 1;
 		char* localCopyContents = new char[(char*)hi-(char*)low];
 		size_t bytesRead = 0;
-		if (ReadProcessMemory(process, memInfo.BaseAddress, localCopyContents, memInfo.RegionSize, &bytesRead))
+		if (
+			readMemory(process, low, size, localCopyContents)
+		)
 		{
 			char* cur = localCopyContents;
 			size_t curPos = 0;
-			while (curPos < memInfo.RegionSize - patternLen + 1)
+			while (curPos < size - patternLen + 1)
 			{
 				if (memcmp(cur, pattern, patternLen) == 0)
 				{
-					returnVec.push_back((char*)memInfo.BaseAddress + curPos);
+					returnVec.push_back((char*)low + curPos);
 				}
 				curPos++;
 				cur++;
@@ -193,7 +237,7 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 		}
 		delete[] localCopyContents;
 
-		basePtr = (char*)memInfo.BaseAddress + memInfo.RegionSize;
+		basePtr = (char*)low + size;
 	}
 
 	return returnVec;
