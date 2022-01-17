@@ -26,7 +26,7 @@ void closeProcess(PROCESS process);
 
 std::string getLastErrorString();
 void writeMemory(PROCESS process, void *ptr, void* data, size_t size, ErrorLog &errorLog);
-
+bool readMemory(PROCESS process, void *start, size_t size, void *buff);
 
 bool initVirtualQuery(PROCESS process);
 bool getNextQuery(void **low, void **hi);

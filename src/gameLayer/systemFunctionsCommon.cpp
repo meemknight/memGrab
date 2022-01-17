@@ -170,3 +170,45 @@ void refindBytePatternInProcessMemory(PROCESS process, void* pattern, size_t pat
 
 	found = std::move(intersect);
 }
+
+
+std::vector<void *> findBytePatternInProcessMemory(PROCESS process, void *pattern, size_t patternLen)
+{
+	if (patternLen == 0) { return {}; }
+
+	std::vector<void *> returnVec;
+	returnVec.reserve(1000);
+
+	if (!initVirtualQuery(process))
+		return {};
+
+	void *low;
+	void *hi;
+
+	while (getNextQuery(&low, &hi))
+	{
+		//search for our byte patern
+		size_t size = (char *)hi - (char *)low + 1;
+		char *localCopyContents = new char[size];
+		if (
+			readMemory(process, low, size, localCopyContents)
+			)
+		{
+			char *cur = localCopyContents;
+			size_t curPos = 0;
+			while (curPos < size - patternLen + 1)
+			{
+				if (memcmp(cur, pattern, patternLen) == 0)
+				{
+					returnVec.push_back((char *)low + curPos);
+				}
+				curPos++;
+				cur++;
+			}
+		}
+		delete[] localCopyContents;
+
+	}
+
+	return returnVec;
+}

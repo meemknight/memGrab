@@ -52,11 +52,11 @@ bool isProcessAlive(PROCESS process)
 
 bool isNumber(const std::string& str)
 {
-    for (char const &c : str)
+	for (char const &c : str)
 	{
-        if (std::isdigit(c) == 0) return false;
-    }
-    return true;
+		if (std::isdigit(c) == 0) return false;
+	}
+	return true;
 }
 
 //gets a list of all the processes, you should ignore the system process(the one with pid 0)
@@ -195,7 +195,7 @@ void writeMemory(PROCESS process, void* ptr, void* data, size_t size, ErrorLog& 
 
 std::stringstream mapData;
 
-int mapsInit(pid_t pid)
+int initVirtualQuery(pid_t pid)
 {
 	mapData.clear();
 
@@ -213,7 +213,7 @@ int mapsInit(pid_t pid)
 	return 1;
 }
 
-bool mapsNext(void** low, void** hi)
+bool getNextQuery(void** low, void** hi)
 {
 	if(mapData.eof()){return false;}
 
@@ -258,13 +258,13 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 	std::vector<void*> returnVec;
 	returnVec.reserve(1000);
 
-	if(mapsInit(process) < 0)
-    	return {};
+	if(initVirtualQuery(process) < 0)
+		return {};
 
 	void* low;
 	void* hi;
 
-	while (mapsNext(&low, &hi))
+	while (getNextQuery(&low, &hi))
 	{
 		//search for our byte patern
 		size_t size = (char*)hi-(char*)low + 1;
