@@ -149,7 +149,6 @@ void setNameOfProcesses()
 
 		}
 
-
 	}
 
 	for (int i = 0; i < allWindows.size(); i++)
@@ -202,6 +201,41 @@ std::vector<ProcessWindow> getAllWindows()
 
 	return allWindows;
 }
+
+
+PROCESS queriedProcess = 0;
+char *baseQueriedPtr = (char *)0x0;
+
+bool initVirtualQuery(PROCESS process)
+{
+	queriedProcess = process;
+	baseQueriedPtr = 0;
+	return 1;
+}
+
+bool getNextQuery(void **low, void **hi)
+{
+	MEMORY_BASIC_INFORMATION memInfo;
+
+	bool rez = 0;
+	while(true)
+	{
+		rez = VirtualQueryEx(queriedProcess, (void *)baseQueriedPtr, &memInfo, sizeof(MEMORY_BASIC_INFORMATION));
+
+		if (!rez) { return false; }
+
+		if (memInfo.State == MEM_COMMIT && memInfo.Protect == PAGE_READWRITE)
+		{
+			//good page
+			*low = memInfo.BaseAddress;
+			*hi = (char *)memInfo.BaseAddress + memInfo.RegionSize;
+			return true;
+		}
+
+	}
+}
+
+
 
 //http://kylehalladay.com/blog/2020/05/20/Rendering-With-Notepad.html
 std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen)

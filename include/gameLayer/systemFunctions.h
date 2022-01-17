@@ -26,5 +26,13 @@ void closeProcess(PROCESS process);
 
 std::string getLastErrorString();
 void writeMemory(PROCESS process, void *ptr, void* data, size_t size, ErrorLog &errorLog);
+
+
+bool initVirtualQuery(PROCESS process);
+bool getNextQuery(void **low, void **hi);
+
 std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen);
+
+
+
 void refindBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen, std::vector<void*>& found);

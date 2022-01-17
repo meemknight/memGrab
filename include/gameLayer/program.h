@@ -74,8 +74,8 @@ union Type
 
 struct GenericType
 {
-	Type data;
-	int type;
+	Type data = {};
+	int type=0;
 
 	void* ptr() { return &data; }
 	int getBytesSize()

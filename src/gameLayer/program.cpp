@@ -10,7 +10,6 @@
 void OpenProgram::render()
 {
 
-
 	//ImGui::Text("Process name");
 	//bool open = ImGui::InputText("##Enter process name", processName, sizeof(processName), ImGuiInputTextFlags_EnterReturnsTrue);
 
