@@ -257,12 +257,37 @@ bool OppenedProgram::render()
 		{
 			ImGui::Text("hex editor goes here");
 
+			ImGui::BeginGroup();
+
+
+			for (int i = 0; i < 10; i++)
+			{
+
+				for (int i = 0; i < 16; i++)
+				{
+					ImGui::Text("%c%c ", 'a' + i, 'a' + i);
+					if (i < 15) { ImGui::SameLine(); }
+				}
+
+			}
+
+			void *ptr;
+
+			hexLog.setError("warn", ErrorLog::ErrorType::warn);
+
+			ImGui::EndGroup();
+
 
 		}
 		else
 		{
 			ImGui::Text("Process name: %s", currentPocessName);
 		}
+
+		hexLog.renderText();
+
+		ImGui::NewLine();
+
 		ImGui::PopID();
 	}
 	
