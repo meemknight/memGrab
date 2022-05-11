@@ -257,10 +257,7 @@ bool OppenedProgram::render()
 		{
 			ImGui::Text("hex editor goes here");
 
-			static char data[] = "HELLO WORLD TEST, HELLO WORLD TESTHELLO WORLD TESTHELLO WORLD TEST,HELLO WORLD TESTHELLO WORLD TESTHELLO WORLD TESTHELLO WORLD TESTHELLO WORLD TEST";
 
-			hexEditor.DrawWindow("hex editor", data, sizeof(data), 0);
-			
 		}
 		else
 		{

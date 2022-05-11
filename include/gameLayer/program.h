@@ -230,7 +230,6 @@ struct OppenedProgram
 	ErrorLog errorLog;
 	ErrorLog hexLog;
 	SearchForValue searcher;
-	MemoryEditor hexEditor;
 
 	bool isAlieve();
 	bool render();
