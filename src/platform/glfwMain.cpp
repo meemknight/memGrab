@@ -391,7 +391,8 @@ int main()
 
 		if (!gameLogic(augmentedDeltaTime))
 		{
-			return 0; //todo call game end ?
+			closeGame();
+			return 0; 
 		}
 
 	#pragma endregion

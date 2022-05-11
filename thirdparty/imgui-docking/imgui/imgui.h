@@ -3150,6 +3150,9 @@ enum ImDrawCornerFlags_
 
 //-----------------------------------------------------------------------------
 
+#include "imgui_memory_editor.h"
+
+
 #if defined(__clang__)
 #pragma clang diagnostic pop
 #elif defined(__GNUC__)

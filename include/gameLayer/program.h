@@ -228,10 +228,13 @@ struct OppenedProgram
 	char currentPocessName[256] = {};
 	ErrorLog writeLog;
 	ErrorLog errorLog;
+	ErrorLog hexLog;
 	SearchForValue searcher;
+	MemoryEditor hexEditor;
 
 	bool isAlieve();
 	bool render();
 	void close();
 
 };
+

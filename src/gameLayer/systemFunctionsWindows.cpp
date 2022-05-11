@@ -234,6 +234,7 @@ bool getNextQuery(void **low, void **hi)
 
 		if (memInfo.State == MEM_COMMIT && memInfo.Protect == PAGE_READWRITE)
 		{
+			
 			//good page
 			*low = memInfo.BaseAddress;
 			*hi = (char *)memInfo.BaseAddress + memInfo.RegionSize;

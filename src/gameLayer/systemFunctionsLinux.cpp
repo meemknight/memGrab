@@ -195,7 +195,7 @@ void writeMemory(PROCESS process, void* ptr, void* data, size_t size, ErrorLog& 
 
 std::stringstream mapData;
 
-int initVirtualQuery(pid_t pid)
+bool initVirtualQuery(PROCESS pid)
 {
 	mapData.clear();
 

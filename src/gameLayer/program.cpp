@@ -178,71 +178,97 @@ bool OppenedProgram::render()
 	s << "Process: ";
 	s << currentPocessName << "##" << pid << "open and use process";
 	bool oppened = 1;
-	ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoSavedSettings);
-
-	if (pid != 0 && isOppened)
+	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoSavedSettings))
 	{
-		ImGui::PushID(pid);
-		//ImGui::Begin(currentPocessName);
 
-		ImGui::Text("Process id: %d, name: %s", (int)pid, currentPocessName);
-		static int v = 0;
-		ImGui::NewLine();
-
-		//ImGui::Text("Search for a value");
-		//typeInput<__COUNTER__>();
-
-		static void* memLocation = {};
-		ImGui::NewLine();
-		ImGui::Text("Enter memory location");
-		ImGui::InputScalar("##mem location", ImGuiDataType_U64, &memLocation, 0, 0, "%016" IM_PRIx64, ImGuiInputTextFlags_CharsHexadecimal);
-		ImGui::NewLine();
-
-	#pragma region write to memory
+		if (pid != 0 && isOppened)
 		{
-			ImGui::Text("Write to memory");
-			bool enterPressed = 0;
-			static std::string s;
-			static GenericType data;
-			typeInput<__COUNTER__>(data, &enterPressed, 0, &s);
-			ImGui::SameLine();
-			enterPressed |= ImGui::Button("Write");
+			ImGui::PushID(pid);
+			//ImGui::Begin(currentPocessName);
 
-			if (enterPressed)
+			ImGui::Text("Process id: %d, name: %s", (int)pid, currentPocessName);
+			static int v = 0;
+			ImGui::NewLine();
+
+			//ImGui::Text("Search for a value");
+			//typeInput<__COUNTER__>();
+
+			static void *memLocation = {};
+			ImGui::NewLine();
+			ImGui::Text("Enter memory location");
+			ImGui::InputScalar("##mem location", ImGuiDataType_U64, &memLocation, 0, 0, "%016" IM_PRIx64, ImGuiInputTextFlags_CharsHexadecimal);
+			ImGui::NewLine();
+
+		#pragma region write to memory
 			{
-				if (data.type == Types::t_string)
+				ImGui::Text("Write to memory");
+				bool enterPressed = 0;
+				static std::string s;
+				static GenericType data;
+				typeInput<__COUNTER__>(data, &enterPressed, 0, &s);
+				ImGui::SameLine();
+				enterPressed |= ImGui::Button("Write");
+
+				if (enterPressed)
 				{
-					writeMemory(handleToProcess, (void*)memLocation, (void*)s.c_str(), s.size(), writeLog);
+					if (data.type == Types::t_string)
+					{
+						writeMemory(handleToProcess, (void *)memLocation, (void *)s.c_str(), s.size(), writeLog);
+					}
+					else
+					{
+						writeMemory(handleToProcess, (void *)memLocation, data.ptr(), data.getBytesSize(), writeLog);
+					}
 				}
-				else
-				{
-					writeMemory(handleToProcess, (void*)memLocation, data.ptr(), data.getBytesSize(), writeLog);
-				}
+
+				writeLog.renderText();
+
+				ImGui::NewLine();
+			}
+		#pragma endregion
+
+			auto searched = searcher.render(handleToProcess);
+
+			if (searched)
+			{
+				memLocation = searched;
 			}
 
-			writeLog.renderText();
-
-			ImGui::NewLine();
+			//ImGui::End();
+			ImGui::PopID();
 		}
-	#pragma endregion
-
-		auto searched = searcher.render(handleToProcess);
-
-		if (searched)
+		else
 		{
-			memLocation = searched;
+			ImGui::Text("Process name: %s", currentPocessName);
 		}
 
-		//ImGui::End();
+		errorLog.renderText();
+
+	}
+
+	ImGui::End();
+
+	s << "Hex";
+
+	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoSavedSettings))
+	{
+		ImGui::PushID(pid);
+		if (pid != 0 && isOppened)
+		{
+			ImGui::Text("hex editor goes here");
+
+			static char data[] = "HELLO WORLD TEST, HELLO WORLD TESTHELLO WORLD TESTHELLO WORLD TEST,HELLO WORLD TESTHELLO WORLD TESTHELLO WORLD TESTHELLO WORLD TESTHELLO WORLD TEST";
+
+			hexEditor.DrawWindow("hex editor", data, sizeof(data), 0);
+			
+		}
+		else
+		{
+			ImGui::Text("Process name: %s", currentPocessName);
+		}
 		ImGui::PopID();
 	}
-	else
-	{
-		ImGui::Text("Process name: %s", currentPocessName);
-	}
-
-	errorLog.renderText();
-
+	
 	ImGui::End();
 
 	return oppened;
