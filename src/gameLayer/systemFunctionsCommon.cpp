@@ -171,7 +171,7 @@ void refindBytePatternInProcessMemory(PROCESS process, void* pattern, size_t pat
 	found = std::move(intersect);
 }
 
-
+//http://kylehalladay.com/blog/2020/05/20/Rendering-With-Notepad.html
 std::vector<void *> findBytePatternInProcessMemory(PROCESS process, void *pattern, size_t patternLen)
 {
 	if (patternLen == 0) { return {}; }
@@ -179,35 +179,40 @@ std::vector<void *> findBytePatternInProcessMemory(PROCESS process, void *patter
 	std::vector<void *> returnVec;
 	returnVec.reserve(1000);
 
-	if (!initVirtualQuery(process))
+	auto query = initVirtualQuery(process);
+
+	if (!query.oppened());
 		return {};
 
-	void *low;
-	void *hi;
+	void *low = nullptr;
+	void *hi = nullptr;
+	int flags = memQueryFlags_None;
 
-	while (getNextQuery(&low, &hi))
+	while (getNextQuery(query, low, hi, flags))
 	{
-		//search for our byte patern
-		size_t size = (char *)hi - (char *)low + 1;
-		char *localCopyContents = new char[size];
-		if (
-			readMemory(process, low, size, localCopyContents)
-			)
+		if ((flags | memQueryFlags_Read) && (flags | memQueryFlags_Write))
 		{
-			char *cur = localCopyContents;
-			size_t curPos = 0;
-			while (curPos < size - patternLen + 1)
+			//search for our byte patern
+			size_t size = (char *)hi - (char *)low + 1;
+			char *localCopyContents = new char[size];
+			if (
+				readMemory(process, low, size, localCopyContents)
+				)
 			{
-				if (memcmp(cur, pattern, patternLen) == 0)
+				char *cur = localCopyContents;
+				size_t curPos = 0;
+				while (curPos < size - patternLen + 1)
 				{
-					returnVec.push_back((char *)low + curPos);
+					if (memcmp(cur, pattern, patternLen) == 0)
+					{
+						returnVec.push_back((char *)low + curPos);
+					}
+					curPos++;
+					cur++;
 				}
-				curPos++;
-				cur++;
 			}
+			delete[] localCopyContents;
 		}
-		delete[] localCopyContents;
-
 	}
 
 	return returnVec;

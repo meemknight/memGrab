@@ -277,7 +277,6 @@ bool OppenedProgram::render()
 
 			ImGui::EndGroup();
 
-
 		}
 		else
 		{

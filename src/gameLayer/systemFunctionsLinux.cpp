@@ -12,7 +12,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <fstream>
-#include <sstream>
 #include <filesystem>
 
 //PID is just a number
@@ -193,32 +192,33 @@ void writeMemory(PROCESS process, void* ptr, void* data, size_t size, ErrorLog& 
 	//}
 }
 
-std::stringstream mapData;
 
-bool initVirtualQuery(PROCESS pid)
+OppenedQuery initVirtualQuery(PROCESS process)
 {
-	mapData.clear();
+	OppenedQuery query{};
 
 	char fileName[256]={};
-	sprintf(fileName, "/proc/%ld/maps", (long)pid);
+	sprintf(fileName, "/proc/%ld/maps", (long)process);
 	
 	std::ifstream file(fileName);
-	if(!file.is_open())	{return -1;}
+	if(!file.is_open())	{return query; /*fail*/}
 
 	std::vector<char> data{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
-	mapData = std::stringstream(std::string(data.begin(), data.end()));
+	query.mapData = std::stringstream(std::string(data.begin(), data.end()));
 
 	file.close();
 
-	return 1;
+	return query;
 }
 
-bool getNextQuery(void** low, void** hi)
+bool getNextQuery(OppenedQuery &query, void *&low, void *&hi, int &flags)
 {
-	if(mapData.eof()){return false;}
+	flags = memQueryFlags_Read | memQueryFlags_Write;
+	
+	if(query.mapData.eof()){query = OppenedQuery(); return false;}
 
 	std::string line;
-	std::getline(mapData, line);
+	std::getline(query.mapData, line);
 
 	std::stringstream lineStream(line);
 
@@ -244,13 +244,14 @@ bool getNextQuery(void** low, void** hi)
 	size_t lowVal = std::stoull(beg, 0, 16);
 	size_t highVal = std::stoull(end, 0, 16);
 
-	*low = (void*)lowVal; 
-	*hi = (void*)highVal;
+	low = (void*)lowVal; 
+	hi = (void*)highVal;
 
 	return true;
 }
 
 //scans the process for the byte patern
+/*
 std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen)
 {
 	if (patternLen == 0) { return {}; }
@@ -291,6 +292,7 @@ std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern
 
 	return returnVec;
 }
+*/
 
 //returns 0 on fail
 //on linux will probably just return the pid or sthing

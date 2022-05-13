@@ -209,35 +209,71 @@ std::vector<ProcessWindow> getAllWindows()
 }
 
 
-PROCESS queriedProcess = 0;
-char *baseQueriedPtr = (char *)0x0;
 
-bool initVirtualQuery(PROCESS process)
+
+
+OppenedQuery initVirtualQuery(PROCESS process)
 {
-	queriedProcess = process;
-	baseQueriedPtr = 0;
-	return 1;
+	OppenedQuery q = {};
+
+	q.queriedProcess = process;
+	q.baseQueriedPtr = 0;
+	return q;
 }
 
-bool getNextQuery(void **low, void **hi)
+bool getNextQuery(OppenedQuery &query, void *&low, void *&hi, int &flags)
 {
+
+	if (query.queriedProcess == 0) { return false; }
+
+	flags = memQueryFlags_None;
+	low = nullptr;
+	hi = nullptr;
+
 	MEMORY_BASIC_INFORMATION memInfo;
 
 	bool rez = 0;
 	while(true)
 	{
-		rez = VirtualQueryEx(queriedProcess, (void *)baseQueriedPtr, &memInfo, sizeof(MEMORY_BASIC_INFORMATION));
+		rez = VirtualQueryEx(query.queriedProcess, (void *)query.baseQueriedPtr, &memInfo, sizeof(MEMORY_BASIC_INFORMATION));
 
-		if (!rez) { return false; }
-
-		baseQueriedPtr = (char *)memInfo.BaseAddress + memInfo.RegionSize;
-
-		if (memInfo.State == MEM_COMMIT && memInfo.Protect == PAGE_READWRITE)
+		if (!rez) 
 		{
-			
+			query = {};
+			return false; 
+		}
+
+		query.baseQueriedPtr = (char *)memInfo.BaseAddress + memInfo.RegionSize;
+		
+		if (memInfo.State == MEM_COMMIT)
+		{
 			//good page
-			*low = memInfo.BaseAddress;
-			*hi = (char *)memInfo.BaseAddress + memInfo.RegionSize;
+
+			if (flags)
+			{
+				if (memInfo.Protect == PAGE_READONLY)
+				{
+					flags = memQueryFlags_Read;
+				}
+				else if (memInfo.Protect == PAGE_READWRITE)
+				{
+					flags = (memQueryFlags_Read | memQueryFlags_Write);
+				}
+				else if (memInfo.Protect == PAGE_EXECUTE)
+				{
+					flags = memQueryFlags_Execute;
+				}else if (memInfo.Protect == PAGE_EXECUTE_READ)
+				{
+					flags = (memQueryFlags_Execute | memQueryFlags_Read);
+				}
+				else if (memInfo.Protect == PAGE_EXECUTE_READWRITE)
+				{
+					flags = (memQueryFlags_Execute | memQueryFlags_Read | memQueryFlags_Write);
+				}
+			}
+
+			low = memInfo.BaseAddress;
+			hi = (char *)memInfo.BaseAddress + memInfo.RegionSize;
 			return true;
 		}
 
@@ -245,56 +281,6 @@ bool getNextQuery(void **low, void **hi)
 }
 
 
-
-//http://kylehalladay.com/blog/2020/05/20/Rendering-With-Notepad.html
-//std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen)
-//{
-//	if (patternLen == 0) { return {}; }
-//
-//	std::vector<void*> returnVec;
-//	returnVec.reserve(1000);
-//
-//	char* basePtr = (char*)0x0;
-//
-//	MEMORY_BASIC_INFORMATION memInfo;
-//
-//	while (VirtualQueryEx(process, (void*)basePtr, &memInfo, sizeof(MEMORY_BASIC_INFORMATION)))
-//	{
-//		
-//		if (memInfo.State == MEM_COMMIT && memInfo.Protect == PAGE_READWRITE)
-//		{
-//			//search for our patern
-//			char* remoteMemRegionPtr = (char*)memInfo.BaseAddress;
-//			char* localCopyContents = new char[memInfo.RegionSize];
-//
-//			SIZE_T bytesRead = 0;
-//			if (ReadProcessMemory(process, memInfo.BaseAddress, localCopyContents, memInfo.RegionSize, &bytesRead))
-//			{
-//				char* cur = localCopyContents;
-//				size_t curPos = 0;
-//
-//				while (curPos < memInfo.RegionSize - patternLen + 1)
-//				{
-//					if (memcmp(cur, pattern, patternLen) == 0)
-//					{
-//						returnVec.push_back((char*)memInfo.BaseAddress + curPos);
-//					}
-//
-//					curPos++;
-//					cur++;
-//				}
-//
-//
-//			}
-//
-//			delete[] localCopyContents;
-//		}
-//
-//		basePtr = (char*)memInfo.BaseAddress + memInfo.RegionSize;
-//	}
-//
-//	return returnVec;
-//}
 
 PROCESS openProcessFromPid(PID pid)
 {
