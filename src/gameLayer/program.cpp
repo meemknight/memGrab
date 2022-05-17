@@ -226,7 +226,7 @@ void drawHexes(void* memData, size_t memSize, Sizes& sizes, size_t baseAddr = 0)
 
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
 
-	ImGui::BeginChild("##Data", ImVec2(0.9 * ImGui::GetWindowWidth(), 0.7 * ImGui::GetWindowHeight()), true);
+	if (ImGui::BeginChild("##Data", {0.f, ImGui::GetWindowHeight()*0.7f}, true))
 	{
 		for (i = 0; i < lines; ++i)
 		{
@@ -294,10 +294,13 @@ void drawHexes(void* memData, size_t memSize, Sizes& sizes, size_t baseAddr = 0)
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
 	
+	//ImGui::
+
 	// to complete later 
-	ImGui::BeginChild("##Options", ImVec2(ImGui::GetWindowWidth(), 0.3 * ImGui::GetWindowHeight()), false);
+	ImGui::BeginChild("##Options", {}, true);
 	{
-		
+		int val = 0;
+		ImGui::InputInt("##hex", &val, 1, 100, ImGuiInputTextFlags_CharsHexadecimal);
 	}
 	ImGui::EndChild();
 }
@@ -382,8 +385,8 @@ bool OppenedProgram::render()
 	ImGui::End();
 	s << "Hex";
 	
-	ImGui::SetNextWindowSize(ImVec2(800, 600));
-	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize))
+	//ImGui::SetNextWindowSize(ImVec2(800, 600));
+	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 	{
 		ImGui::PushID(pid);
 		if (pid != 0 && isOppened)

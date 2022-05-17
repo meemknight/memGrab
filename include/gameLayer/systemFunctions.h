@@ -40,6 +40,7 @@ enum
 	memQueryFlags_Read		= 0b0001,
 	memQueryFlags_Write		= 0b0010,
 	memQueryFlags_Execute	= 0b0100,
+	memQueryFlags_Comitted	= 0b1000,
 
 
 };

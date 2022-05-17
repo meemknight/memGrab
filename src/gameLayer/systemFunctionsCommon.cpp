@@ -188,9 +188,10 @@ std::vector<void *> findBytePatternInProcessMemory(PROCESS process, void *patter
 	void *hi = nullptr;
 	int flags = memQueryFlags_None;
 
+
 	while (getNextQuery(query, low, hi, flags))
 	{
-		if ((flags | memQueryFlags_Read) && (flags | memQueryFlags_Write))
+		if ((flags & memQueryFlags_Comitted) && (flags & memQueryFlags_Read) && (flags & memQueryFlags_Write))
 		{
 			//search for our byte patern
 			size_t size = (char *)hi - (char *)low + 1;

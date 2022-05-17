@@ -213,7 +213,7 @@ OppenedQuery initVirtualQuery(PROCESS process)
 
 bool getNextQuery(OppenedQuery &query, void *&low, void *&hi, int &flags)
 {
-	flags = memQueryFlags_Read | memQueryFlags_Write;
+	flags = memQueryFlags_Read | memQueryFlags_Write | memQueryFlags_Comitted;
 	
 	if(query.mapData.eof()){query = OppenedQuery(); return false;}
 
@@ -249,50 +249,6 @@ bool getNextQuery(OppenedQuery &query, void *&low, void *&hi, int &flags)
 
 	return true;
 }
-
-//scans the process for the byte patern
-/*
-std::vector<void*> findBytePatternInProcessMemory(PROCESS process, void* pattern, size_t patternLen)
-{
-	if (patternLen == 0) { return {}; }
-
-	std::vector<void*> returnVec;
-	returnVec.reserve(1000);
-
-	if(initVirtualQuery(process) < 0)
-		return {};
-
-	void* low;
-	void* hi;
-
-	while (getNextQuery(&low, &hi))
-	{
-		//search for our byte patern
-		size_t size = (char*)hi-(char*)low + 1;
-		char* localCopyContents = new char[size];
-		if (
-			readMemory(process, low, size, localCopyContents)
-		)
-		{
-			char* cur = localCopyContents;
-			size_t curPos = 0;
-			while (curPos < size - patternLen + 1)
-			{
-				if (memcmp(cur, pattern, patternLen) == 0)
-				{
-					returnVec.push_back((char*)low + curPos);
-				}
-				curPos++;
-				cur++;
-			}
-		}
-		delete[] localCopyContents;
-
-	}
-
-	return returnVec;
-}
-*/
 
 //returns 0 on fail
 //on linux will probably just return the pid or sthing
