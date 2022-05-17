@@ -192,6 +192,8 @@ struct Sizes {
 void AddStyles()
 {
 	ImGuiStyle& style = ImGui::GetStyle();
+
+	
 }
 
 
@@ -199,7 +201,10 @@ void AddStyles()
 // display first address on each line
 // second child should have the buffer in clear ascii
 // add *flags
-void drawHexes(void* memData, size_t memSize, Sizes& sizes, size_t baseAddr = 0)
+
+
+
+void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size_t& baseAddr, int& pageNumber) // remove pageNr later
 {
 	size_t i, j;
 	char buf[33];
@@ -222,7 +227,7 @@ void drawHexes(void* memData, size_t memSize, Sizes& sizes, size_t baseAddr = 0)
 	addrDigits += 2; // add 2 more spaces for the 0X at the beginning
 
 	ImU8* memory = (ImU8*)memData; // byte pointer; used to copy bytes
-
+	char* memoryFlags = (char*)memFlags;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
 
@@ -240,40 +245,60 @@ void drawHexes(void* memData, size_t memSize, Sizes& sizes, size_t baseAddr = 0)
 				ImGui::SameLine();
 				ImGui::PushID(sizes.cols * i + j); // push a hexCell ID
 
-				ImGuiInputTextFlags flags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase |
-					 ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysOverwrite | ImGuiInputTextFlags_AutoSelectAll;
+				// set general flags for every situation
+				ImGuiInputTextFlags flags = ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysOverwrite |
+					ImGuiInputTextFlags_AutoSelectAll;
 
-				// if(readOnlycondition)
-				// flags |= ImGuiInputTextFlags_ReadOnly;
+				// if it has write flag it also has the read flag
+				if (memoryFlags[addr + j] & memQueryFlags_Write) 
+					flags |= ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase;	
+				else if(memoryFlags[addr + j] & memQueryFlags_Read) // it has read so there is readable memory in buffer
+					flags |= ImGuiInputTextFlags_ReadOnly;
+				else if(memoryFlags[addr = j] & memQueryFlags_Execute) // no read/write -> PAGE_EXECUTE;   0;
+					flags |= ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_Password; // there is actual memory there but it can't be read; display differently from no memory
+				else // no flags are set -> no memory push styles?
+				{
+					int x = '?';
+					memset(buf, x, 33);
+				}
+
+				// as for showing, buf already something copied; either 0s or machine code
+				// for now will leave it as 00 for no memmory; or just make an if ; no flags means overwrite buf with ??
+
 				sprintf(buf, byteFormat, memory[addr + j]);
-
+				if (memoryFlags[addr + j] & memQueryFlags_Execute)
+				{
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32(0xffffffff)); /// Alpha, Blue, Green, Red
+					ImGui::PushStyleColor(ImGuiCol_Text, ImU32(0xff000000));
+				}
 				ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 4);
-				
+					
 				ImGui::InputText("##hexCell", buf, 3, flags);
 				
+				if (memoryFlags[addr + j] & memQueryFlags_Execute)
+				{
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+				}
 				ImGui::PopID();
 			}
 			ImGui::SameLine();
 			
 			memset(buf, '?', 33);
-			for (size_t dif = j; dif < sizes.cols; ++dif)
+			for (size_t dif = j; dif < sizes.cols; ++dif) // this only fills the last line if memSize not divisible by nrCols
 			{
 				ImGui::PushID(sizes.cols * i + j); // push a hexCell ID
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32(0xff42f2f5)); /// Alpha, Blue, Green, Red
 				ImGui::PushStyleColor(ImGuiCol_Text, ImU32(0xff000000));
 
 				ImGuiInputTextFlags flags = ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_ReadOnly; 
-				// add readOnly since it's not actual data
-
-				// if(readOnlycondition)
-				// flags |= ImGuiInputTextFlags_ReadOnly;
-				
+				// add readOnly since it's not actual data				
 
 				ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 4);
 
 				if (ImGui::InputText("##hexCell", buf, 3, flags))
 				{
-					// try to copy user data to memoye; to add
+					// try to copy user data to memory; to add
 				}
 
 				ImGui::PopStyleColor();
@@ -294,18 +319,28 @@ void drawHexes(void* memData, size_t memSize, Sizes& sizes, size_t baseAddr = 0)
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
 	
-	//ImGui::
 
 	// to complete later 
 	ImGui::BeginChild("##Options", {}, true);
 	{
-		int val = 0;
-		ImGui::InputInt("##hex", &val, 1, 100, ImGuiInputTextFlags_CharsHexadecimal);
+		ImGui::InputScalar("##BaseAddressForHex", ImGuiDataType_U64, &baseAddr, 0, 0, 0);
+		if (ImGui::Button("nextPage", ImVec2(100, 40)))
+		{
+			++pageNumber;
+			baseAddr = 0;
+			if (pageNumber > 500) // add random reset for now; found 680 pages in one run; leave it like so for now
+				pageNumber = 0;
+		}
+		if (ImGui::Button("previousPage", ImVec2(100, 40)))
+		{
+			--pageNumber;
+			baseAddr = 0;
+			if (pageNumber < 0)
+				pageNumber = 0;
+		}
 	}
 	ImGui::EndChild();
 }
-
-char actualData[4000] = "ASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASFASDASASF";
 
 
 bool OppenedProgram::render()
@@ -394,8 +429,54 @@ bool OppenedProgram::render()
 			// ImGui::ShowDemoWindow();
 			// char testData[100] = "Throw some random chars in here";
 			// size_t testSize = 16;
+
+			// size_t memoryAddress -> use for nextQuery
+			const size_t memSize = 4000;
+			char buffer[memSize] = {};
+			char memoryFlags[memSize] = {}; // could use memset to put flag on certain range
+			void* low, *high;
+			int flags = 0;
+			OppenedQuery query = initVirtualQuery(handleToProcess);
+			int pageFound = 0; // found >650 pages in one test
+			while (getNextQuery(query, low, high, flags)) // set memory flags;
+			{
+				// temporary to find some data since it the address range is really large;
+				// printed first addres and it was a 15 digit number while we work with 4000 bytes ;
+				// GL finding addresses that have data searching blindly :)))
+				++pageFound;
+				if (memoryAddress == 0 && pageFound == this->page) // change page in program.h
+					memoryAddress = (size_t)low;
+
+				if ((size_t)low >= (size_t)memoryAddress && (size_t)low <= (size_t)memoryAddress + memSize)
+				{
+					size_t bytesToCopy = std::min((memoryAddress + memSize) - (size_t)low, (size_t)high - (size_t)low);
+					// (baseAddr+memSize - low) -> nr of bytes from low to end of buffer -> available space
+					// (high - low) -> actual size of memory -> desired space to read the entire page
+					
+					//if (flags)
+					//	std::cout << "ASDASD\n";
+					//else
+					//	std::cout << "DSADSA\n";
+
+					// only read if allowed
+					if(flags & memQueryFlags_Read)
+						readMemory(handleToProcess, low, bytesToCopy, buffer + (memoryAddress - (size_t)low));
+					
+					if (flags & memQueryFlags_Execute) // this found no pages...; idk couldn't test everything unfortunately
+					{									// if u see things in cmd it could be because of this; 10/10
+						if (this->page != 0)
+						{
+							this->page = 0;
+							this->memoryAddress = (size_t)low;
+						}
+						std::cout << "reached\n";
+					}
+					// always save flags for the hexEditor
+					memset(memoryFlags + (memoryAddress - (size_t)low), flags, bytesToCopy); // set memory flags for that range
+				}
+			}
 			Sizes ss;
-			drawHexes(actualData, 450, ss, 0);
+			drawHexes(buffer, memoryFlags, memSize, ss, memoryAddress, page);
 			
 			//ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase ))  | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysOverwrite | ImGuiInputTextFlags_AutoSelectAll)) , hexCellCallback, &userData))
 

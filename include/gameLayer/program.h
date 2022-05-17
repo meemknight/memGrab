@@ -230,6 +230,12 @@ struct OppenedProgram
 	ErrorLog errorLog;
 	ErrorLog hexLog;
 	SearchForValue searcher;
+	size_t memoryAddress = 0;
+	
+	// remove vars below afterwards;
+	int page = 50;
+
+	
 
 	bool isAlieve();
 	bool render();
