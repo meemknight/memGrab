@@ -63,6 +63,8 @@ bool gameLogic(float deltaTime)
 
 		static bool openWindow=1;
 
+		const char *myData = "my data";
+
 		//static OppenedProgram oppenedProgram;
 		static OpenProgram openProgram;
 		static std::vector<OppenedProgram> programsOppened;
@@ -155,6 +157,8 @@ bool gameLogic(float deltaTime)
 #pragma endregion
 
 }
+
+const char *data = "hello worlddd\n";
 
 void closeGame()
 {

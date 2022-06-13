@@ -363,7 +363,8 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 					baseAddr = 1;
 			}
 			ImGui::SameLine();
-			ImGui::InputScalar("##BaseAddressForHex", ImGuiDataType_U64, &baseAddr, 0, 0, 0);
+			ImGui::InputScalar("##BaseAddressForHex", ImGuiDataType_U64, &baseAddr, 0, 0, 
+				"%016" IM_PRIx64, ImGuiInputTextFlags_CharsHexadecimal);
 			ImGui::SameLine();
 			
 			if (ImGui::Button(">", ImVec2(sizes.hexCharWidth + 6, 0)))
@@ -467,7 +468,7 @@ char xxxx[2000] = "ASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasda
 
 bool OppenedProgram::render()
 {
-	std::cout << (size_t)xxxx<<'\n';
+	std::cout << (void*)xxxx<<'\n';
 
 	std::stringstream s;
 	s << "Process: ";
@@ -546,7 +547,7 @@ bool OppenedProgram::render()
 	
 	
 	// ImGui::ShowDemoWindow();
-	
+	// hex editor
 	ImGui::SetNextWindowSize(ImVec2(1000, 800));
 	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 	{
@@ -607,6 +608,7 @@ bool OppenedProgram::render()
 				}
 				
 			}
+			
 			drawHexes(buffer, memoryFlags, memSize, ss, memoryAddress, page, pageFound);
 			
 			// void* ptr;
