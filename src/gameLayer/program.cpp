@@ -358,6 +358,18 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 			ImGui::Text("%s", asciiBuf);
 
 		}
+		if (scrollTopBot)
+		{
+			if (scrollTopBot == 1) // scroll up
+			{
+				ImGui::SetScrollY(0.f);
+			}
+			else
+			{ 
+				ImGui::SetScrollY(ImGui::GetTextLineHeightWithSpacing()*lines *2);
+			}
+			scrollTopBot = 0;
+		}
 	}
 	ImGui::EndChild();
 	ImGui::PopStyleVar();
@@ -369,22 +381,25 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 		{
 			if (ImGui::Button("<", ImVec2(sizes.hexCharWidth + 6, 0)))
 			{
-				if (memoryAddress > memSize)
-					memoryAddress -= memSize;
+				if (memoryAddress >= memSize - sizes.cols * 5)
+					memoryAddress -= (memSize - sizes.cols*5);
 				else
 					memoryAddress = 0;
+				scrollTopBot = -1;
 			}
+			
 			ImGui::SameLine();
 			ImGui::InputScalar("##BaseAddressForHex", ImGuiDataType_U64, &memoryAddress, 0, 0,
-				"%016zX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
+				"%016zX" , ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
 			ImGui::SameLine();
 			
 			if (ImGui::Button(">", ImVec2(sizes.hexCharWidth + 6, 0)))
 			{
-				if (memoryAddress < ((size_t)-1)  - 2*memSize + 1)
-					memoryAddress += memSize;
+				if (memoryAddress <= ((size_t)-1)  - 2*memSize + 1 + sizes.cols * 5)
+					memoryAddress += (memSize - sizes.cols * 5);
 				else
-					memoryAddress = (size_t) - memSize + 1;
+					memoryAddress = ((size_t) -1) - memSize + 1;
+				scrollTopBot = 1;
 			}
 		}
 		ImGui::EndChild();
@@ -454,14 +469,10 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 	
 }
 
-//char xxxx[200] = "ASdasdasdASdasdasdASSdsdasdASddasdasdASdasdasdASdasdasd\n";
-
 
 
 bool OppenedProgram::render()
 {
-	/*std::cout << (void*)xxxx<<'\n';
-	std::cout << xxxx;*/
 	std::stringstream s;
 	s << "Process: ";
 	s << currentPocessName << "##" << pid << "open and use process";
@@ -538,7 +549,7 @@ bool OppenedProgram::render()
 	s << "Hex";
 	
 	
-	ImGui::ShowDemoWindow();
+	//ImGui::ShowDemoWindow();
 	// hex editor
 	ImGui::SetNextWindowSize(ImVec2(1000, 800));
 	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))

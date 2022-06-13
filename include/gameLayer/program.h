@@ -232,7 +232,7 @@ struct OppenedProgram
 	SearchForValue searcher;
 	size_t memoryAddress = 0;
 	
-
+	int scrollTopBot = 0; // 1 = up; 0 = nothing; -1 = botom
 	
 
 	bool isAlieve();
