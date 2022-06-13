@@ -232,14 +232,12 @@ struct OppenedProgram
 	SearchForValue searcher;
 	size_t memoryAddress = 0;
 	
-	// remove vars below afterwards;
-	int page = 50;
 
 	
 
 	bool isAlieve();
 	bool render();
 	void close();
-
+	void drawHexes(void* memData, void* memFlags, size_t memSize);
 };
 

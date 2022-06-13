@@ -199,10 +199,9 @@ void AddStyles()
 
 enum boxColor {
 	boxColorCommitted = 0xaf000000, /// Alpha, Blue, Green, Red
-	boxColorUncommitted = 0xff000000, /// Alpha, Blue, Green, Red
+	boxColorUncommitted = 0xff333333, /// Alpha, Blue, Green, Red
 	boxColorRead = 0xbb4545ba, // red for readable memory
 	boxColorReadWrite = 0xcc089500, // green for readwrite memory
-	boxColorExecute = 0xefdf0000, // blue for areas of code
 };
 
 enum textColor {
@@ -210,14 +209,22 @@ enum textColor {
 	txtColorUncommitted = 0xffffffff, //
 	txtColorRead = 0xffffffff, // 
 	txtColorReadWrite = 0xffffffff, //
-	txtColorExecute = 0xffffffff, // ;
 };
 
+int getBitsFromHexChar(char c)
+{
+	if ('0' <= c && c <= '9')
+		return c - '0';
+	if ('A' <= c && c <= 'F')
+		return c - 'A' + 10;
 
-void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size_t& baseAddr, int& pageNumber, int&totalPages) // remove pageNr later
+	return 0;
+}
+
+void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 {
 	ImGui::SetWindowFontScale(1.f);
-	
+	Sizes sizes;
 	size_t i, j;
 	char buf[33];
 	char asciiBuf[17];
@@ -229,7 +236,7 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 	
 	size_t lines = (memSize + sizes.cols - 1) / sizes.cols;
 	size_t addrDigits = 0;
-	size_t lastAddr = memSize + baseAddr - 1; // use the largest address to compute digits needed for display
+	size_t lastAddr = memSize + memoryAddress - 1; // use the largest address to compute digits needed for display
 
 	while (lastAddr > 0)
 	{
@@ -247,7 +254,7 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 		for (i = 0; i < lines; ++i)
 		{
 			size_t addr = i * sizes.cols;
-			ImGui::Text(addressFormat, addrDigits, addr + baseAddr);
+			ImGui::Text(addressFormat, addrDigits, addr + memoryAddress);
 			ImGui::SameLine();
 			ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 
@@ -259,54 +266,60 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 				// set general flags for every situation
 				ImGuiInputTextFlags flags = ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysOverwrite |
 					ImGuiInputTextFlags_AutoSelectAll;
-
-				boxColor bgColor;
-				textColor txtColor;
-				// if it has write flag it also has the read flag
+				
 				if (memoryFlags[addr + j] & memQueryFlags_Write)
 				{
 					sprintf(buf, byteFormat, memory[addr + j]);
 					flags |= ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase;
-					bgColor = boxColor::boxColorReadWrite;
-					txtColor = textColor::txtColorReadWrite;
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorReadWrite));
+					ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorReadWrite));
+
+					ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
+					if (ImGui::InputText("##hexCell", buf, 3, flags))
+					{
+						if (buf[0] != 0 && buf[1] != 0)
+						{
+							char c = (getBitsFromHexChar(buf[0]) << 4) + getBitsFromHexChar(buf[1]);
+							writeMemory(handleToProcess, (void*) (memoryAddress + addr + j), (void*) &c, (size_t)1, writeLog);
+						}
+					}
+
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
 				}
 				else if (memoryFlags[addr + j] & memQueryFlags_Read)
 				{
 					sprintf(buf, byteFormat, memory[addr + j]);
-					flags |= ImGuiInputTextFlags_ReadOnly;
-					bgColor = boxColor::boxColorRead;
-					txtColor = textColor::txtColorRead;
-				}
-				else if (memoryFlags[addr + j] & memQueryFlags_Execute)
-				{
-					sprintf(buf, byteFormat, memory[addr + j]);
-					flags |= ImGuiInputTextFlags_ReadOnly;
-					bgColor = boxColor::boxColorExecute;
-					txtColor = textColor::txtColorExecute;
+					ImGui::Text(" %c%c", buf[0], buf[1]);
 				}
 				else if (memoryFlags[addr + j] & memQueryFlags_Comitted)
 				{
 					int x = '?';
 					memset(buf, x, 33);
-					bgColor = boxColor::boxColorCommitted;
-					txtColor = textColor::txtColorCommitted;
+					flags |= ImGuiInputTextFlags_ReadOnly;
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorCommitted));
+					ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorCommitted));
+
+					ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
+					ImGui::InputText("##hexCell", buf, 3, flags);
+
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
 				}
 				else // uncommitted memory
 				{
 					int x = '?';
 					memset(buf, x, 33);
-					bgColor = boxColor::boxColorUncommitted;
-					txtColor = textColor::txtColorUncommitted;
+					flags |= ImGuiInputTextFlags_ReadOnly;
+					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorUncommitted));
+					ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorUncommitted));
+
+					ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
+					ImGui::InputText("##hexCell", buf, 3, flags);
+
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
 				}
-				
-				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int) bgColor));
-				ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int) txtColor));
-				
-				ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);	
-				ImGui::InputText("##hexCell", buf, 3, flags);
-				
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
 				
 				ImGui::PopID();
 			}
@@ -350,48 +363,28 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 	ImGui::PopStyleVar();
 	
 
-	// to complete later 
 	ImGui::BeginChild("##Options", {0.f, 0.f}, true);
 	{
 		ImGui::BeginChild("##Navigate", {ImGui::GetWindowWidth()/2, 0.f}, true);
 		{
 			if (ImGui::Button("<", ImVec2(sizes.hexCharWidth + 6, 0)))
 			{
-				if (baseAddr > memSize)
-					baseAddr -= memSize;
+				if (memoryAddress > memSize)
+					memoryAddress -= memSize;
 				else
-					baseAddr = 1;
+					memoryAddress = 0;
 			}
 			ImGui::SameLine();
-			ImGui::InputScalar("##BaseAddressForHex", ImGuiDataType_U64, &baseAddr, 0, 0, 
-				"%016" IM_PRIx64, ImGuiInputTextFlags_CharsHexadecimal);
+			ImGui::InputScalar("##BaseAddressForHex", ImGuiDataType_U64, &memoryAddress, 0, 0,
+				"%016zX", ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase);
 			ImGui::SameLine();
 			
 			if (ImGui::Button(">", ImVec2(sizes.hexCharWidth + 6, 0)))
 			{
-				if (baseAddr < ((size_t)-1)  - 2*memSize + 1)
-					baseAddr += memSize;
+				if (memoryAddress < ((size_t)-1)  - 2*memSize + 1)
+					memoryAddress += memSize;
 				else
-					baseAddr = (size_t) - memSize + 1;
-			}
-			
-
-			if (ImGui::SliderInt("Page", &pageNumber, 1, totalPages))
-			{
-				baseAddr = 0;
-			}
-
-			if (ImGui::Button("nextPage", ImVec2(100, 40)))
-			{
-				if (pageNumber < totalPages)
-					++pageNumber;
-				baseAddr = 0;
-			}
-			if (ImGui::Button("previousPage", ImVec2(100, 40)))
-			{
-				if (pageNumber > 1)
-					--pageNumber;
-				baseAddr = 0;
+					memoryAddress = (size_t) - memSize + 1;
 			}
 		}
 		ImGui::EndChild();
@@ -403,7 +396,7 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 			char common[5];
 			int filler = '?';
 			memset(common, filler, 4);
-			ImGuiInputTextFlags commonFlags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_ReadOnly;
+			ImGuiInputTextFlags commonFlags =  ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_ReadOnly;
 			// ReadWrite
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorReadWrite));
 			ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorReadWrite));
@@ -416,29 +409,17 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
 
-			// Read
+			// ReadOnly
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorRead));
 			ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorRead));
 
-			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
-			ImGui::InputText("##Rexample", common, 3, commonFlags);
+			ImGui::Text(" %c%c", buf[0], buf[1]);
 			ImGui::SameLine();
 			ImGui::Text("ReadOnly memory");
 
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
 
-			// Execute
-			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorExecute));
-			ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorExecute));
-
-			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
-			ImGui::InputText("##EXECexample", common, 3, commonFlags);
-			ImGui::SameLine();
-			ImGui::Text("Executable memory");
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
 
 			// Committed
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorCommitted));
@@ -452,6 +433,17 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
 
+			// Uncommitted
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorUncommitted));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorUncommitted));
+
+			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
+			ImGui::InputText("##UNCOMMexample", common, 3, commonFlags);
+			ImGui::SameLine();
+			ImGui::Text("Uncommitted memory");
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
 
 		}
 		ImGui::EndChild();
@@ -462,14 +454,14 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 	
 }
 
-char xxxx[2000] = "ASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasd";
+//char xxxx[200] = "ASdasdasdASdasdasdASSdsdasdASddasdasdASdasdasdASdasdasd\n";
 
 
 
 bool OppenedProgram::render()
 {
-	std::cout << (void*)xxxx<<'\n';
-
+	/*std::cout << (void*)xxxx<<'\n';
+	std::cout << xxxx;*/
 	std::stringstream s;
 	s << "Process: ";
 	s << currentPocessName << "##" << pid << "open and use process";
@@ -546,7 +538,7 @@ bool OppenedProgram::render()
 	s << "Hex";
 	
 	
-	// ImGui::ShowDemoWindow();
+	ImGui::ShowDemoWindow();
 	// hex editor
 	ImGui::SetNextWindowSize(ImVec2(1000, 800));
 	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
@@ -561,55 +553,33 @@ bool OppenedProgram::render()
 			int flags = 0;
 
 			OppenedQuery query = initVirtualQuery(handleToProcess);
-			int pageFound = 0;
-			Sizes ss;
-
+			
 			// keep this for the bug report -> overflow when memoryAddress is (size_t) -1
 			// memoryAddress = std::min(memoryAddress, ((size_t)-1) - memSize + 1);
 
 			while (getNextQuery(query, low, high, flags)) // set memory flags;
 			{
-				// temporary to find some data since it the address range is really large;
-				++pageFound;
-				if (memoryAddress == 0 && pageFound == this->page) // change page in program.h
-					memoryAddress = (size_t)low; // to remove this later on; now it is useful to make sure I land in a committed area
 
-				if (memoryAddress < (size_t)high) // i have to catch memory ranges that start before memoryAddress;
+				if (memoryAddress < (size_t)high) //catch memory ranges that start before memoryAddress;
 				{
 					if ((size_t)low >= memoryAddress + memSize) // out of range; skip it;
 						continue;
 					
-					/*if (flags & memQueryFlags_Read) {
-						std::cout << "Read flag is set\n";
-					}
-					if(flags & memQueryFlags_Write) {
-						std::cout << "Write flag is set\n";
-					}
-					if (flags & memQueryFlags_Execute) {
-						std::cout << "Execute flag is set\n";
-					}
-					if (flags & memQueryFlags_Comitted) {
-						std::cout << "Comitted flag is set\n";
-					}*/
-					//std::cout << "LOW:  " << (size_t)low << '\n';
-					//std::cout << "HIGH: " << (size_t)high<< '\n';
 					void* copyStart = (void*) std::max(memoryAddress, (size_t)low);
 					void* copyEnd = (void*)std::min(memoryAddress + memSize, (size_t)high);
 					// if (size_t)copyEnd < (size_t) copyStart -> overflow took place; will be fixed afterwards so me can make the bug report
 
 					size_t bytesToCopy = (size_t)copyEnd - (size_t)copyStart;
 
-					// only read if allowed
 					if (flags & memQueryFlags_Read)
 					{
 						readMemory(handleToProcess, copyStart, bytesToCopy, buffer + ((size_t)copyStart - memoryAddress));					
 					}
 					memset(memoryFlags + ((size_t)copyStart - memoryAddress), flags, bytesToCopy);
 				}
-				
 			}
 			
-			drawHexes(buffer, memoryFlags, memSize, ss, memoryAddress, page, pageFound);
+			drawHexes(buffer, memoryFlags, memSize);
 			
 			// void* ptr;
 			// hexLog.setError("warn", ErrorLog::ErrorType::warn);
