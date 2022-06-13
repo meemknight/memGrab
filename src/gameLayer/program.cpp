@@ -197,19 +197,31 @@ void AddStyles()
 }
 
 
-// compute nr of lines
-// display first address on each line
-// second child should have the buffer in clear ascii
-// add *flags
+enum boxColor {
+	boxColorCommitted = 0xaf000000, /// Alpha, Blue, Green, Red
+	boxColorUncommitted = 0xff000000, /// Alpha, Blue, Green, Red
+	boxColorRead = 0xbb4545ba, // red for readable memory
+	boxColorReadWrite = 0xcc089500, // green for readwrite memory
+	boxColorExecute = 0xefdf0000, // blue for areas of code
+};
+
+enum textColor {
+	txtColorCommitted = 0xffffffff, /// Alpha, Blue, Green, Red
+	txtColorUncommitted = 0xffffffff, //
+	txtColorRead = 0xffffffff, // 
+	txtColorReadWrite = 0xffffffff, //
+	txtColorExecute = 0xffffffff, // ;
+};
 
 
-
-void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size_t& baseAddr, int& pageNumber) // remove pageNr later
+void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size_t& baseAddr, int& pageNumber, int&totalPages) // remove pageNr later
 {
+	ImGui::SetWindowFontScale(1.f);
+	
 	size_t i, j;
 	char buf[33];
 	char asciiBuf[17];
-	const char* addressFormat = "%#0*X";
+	const char* addressFormat = "%#0*zX";
 	const char* byteFormat = "%02X";
 
 	if (sizes.cols > 16) // buf only has space for 32 chars which can only display 16 bytes in hex
@@ -225,7 +237,6 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 		lastAddr >>= 4;
 	}
 	addrDigits += 2; // add 2 more spaces for the 0X at the beginning
-
 	ImU8* memory = (ImU8*)memData; // byte pointer; used to copy bytes
 	char* memoryFlags = (char*)memFlags;
 
@@ -249,37 +260,54 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 				ImGuiInputTextFlags flags = ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysOverwrite |
 					ImGuiInputTextFlags_AutoSelectAll;
 
+				boxColor bgColor;
+				textColor txtColor;
 				// if it has write flag it also has the read flag
-				if (memoryFlags[addr + j] & memQueryFlags_Write) 
-					flags |= ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase;	
-				else if(memoryFlags[addr + j] & memQueryFlags_Read) // it has read so there is readable memory in buffer
+				if (memoryFlags[addr + j] & memQueryFlags_Write)
+				{
+					sprintf(buf, byteFormat, memory[addr + j]);
+					flags |= ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase;
+					bgColor = boxColor::boxColorReadWrite;
+					txtColor = textColor::txtColorReadWrite;
+				}
+				else if (memoryFlags[addr + j] & memQueryFlags_Read)
+				{
+					sprintf(buf, byteFormat, memory[addr + j]);
 					flags |= ImGuiInputTextFlags_ReadOnly;
-				else if(memoryFlags[addr = j] & memQueryFlags_Execute) // no read/write -> PAGE_EXECUTE;   0;
-					flags |= ImGuiInputTextFlags_ReadOnly | ImGuiInputTextFlags_Password; // there is actual memory there but it can't be read; display differently from no memory
-				else // no flags are set -> no memory push styles?
+					bgColor = boxColor::boxColorRead;
+					txtColor = textColor::txtColorRead;
+				}
+				else if (memoryFlags[addr + j] & memQueryFlags_Execute)
+				{
+					sprintf(buf, byteFormat, memory[addr + j]);
+					flags |= ImGuiInputTextFlags_ReadOnly;
+					bgColor = boxColor::boxColorExecute;
+					txtColor = textColor::txtColorExecute;
+				}
+				else if (memoryFlags[addr + j] & memQueryFlags_Comitted)
 				{
 					int x = '?';
 					memset(buf, x, 33);
+					bgColor = boxColor::boxColorCommitted;
+					txtColor = textColor::txtColorCommitted;
 				}
-
-				// as for showing, buf already something copied; either 0s or machine code
-				// for now will leave it as 00 for no memmory; or just make an if ; no flags means overwrite buf with ??
-
-				sprintf(buf, byteFormat, memory[addr + j]);
-				if (memoryFlags[addr + j] & memQueryFlags_Execute)
+				else // uncommitted memory
 				{
-					ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32(0xffffffff)); /// Alpha, Blue, Green, Red
-					ImGui::PushStyleColor(ImGuiCol_Text, ImU32(0xff000000));
+					int x = '?';
+					memset(buf, x, 33);
+					bgColor = boxColor::boxColorUncommitted;
+					txtColor = textColor::txtColorUncommitted;
 				}
-				ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 4);
-					
+				
+				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int) bgColor));
+				ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int) txtColor));
+				
+				ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);	
 				ImGui::InputText("##hexCell", buf, 3, flags);
 				
-				if (memoryFlags[addr + j] & memQueryFlags_Execute)
-				{
-					ImGui::PopStyleColor();
-					ImGui::PopStyleColor();
-				}
+				ImGui::PopStyleColor();
+				ImGui::PopStyleColor();
+				
 				ImGui::PopID();
 			}
 			ImGui::SameLine();
@@ -291,15 +319,11 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32(0xff42f2f5)); /// Alpha, Blue, Green, Red
 				ImGui::PushStyleColor(ImGuiCol_Text, ImU32(0xff000000));
 
-				ImGuiInputTextFlags flags = ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_ReadOnly; 
-				// add readOnly since it's not actual data				
+				ImGuiInputTextFlags flags = ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_ReadOnly; 			
 
-				ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 4);
-
-				if (ImGui::InputText("##hexCell", buf, 3, flags))
-				{
-					// try to copy user data to memory; to add
-				}
+				ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
+				std::cout << "asdads";
+				ImGui::InputText("##hexCell", buf, 3, flags);
 
 				ImGui::PopStyleColor();
 				ImGui::PopStyleColor();
@@ -312,6 +336,12 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 
 			memset(asciiBuf, 0, 17);
 			memcpy(asciiBuf, (char*)memData + addr, std::min((int)sizes.cols, (int)(memSize - addr)));
+			for (int poz = 0; poz < 16; ++poz)
+			{
+				if (asciiBuf[poz] < 32 || asciiBuf[poz] > 126)
+					asciiBuf[poz] = '.' ;
+			}
+
 			ImGui::Text("%s", asciiBuf);
 
 		}
@@ -321,30 +351,124 @@ void drawHexes(void* memData, void* memFlags, size_t memSize, Sizes& sizes, size
 	
 
 	// to complete later 
-	ImGui::BeginChild("##Options", {}, true);
+	ImGui::BeginChild("##Options", {0.f, 0.f}, true);
 	{
-		ImGui::InputScalar("##BaseAddressForHex", ImGuiDataType_U64, &baseAddr, 0, 0, 0);
-		if (ImGui::Button("nextPage", ImVec2(100, 40)))
+		ImGui::BeginChild("##Navigate", {ImGui::GetWindowWidth()/2, 0.f}, true);
 		{
-			++pageNumber;
-			baseAddr = 0;
-			if (pageNumber > 500) // add random reset for now; found 680 pages in one run; leave it like so for now
-				pageNumber = 0;
+			if (ImGui::Button("<", ImVec2(sizes.hexCharWidth + 6, 0)))
+			{
+				if (baseAddr > memSize)
+					baseAddr -= memSize;
+				else
+					baseAddr = 1;
+			}
+			ImGui::SameLine();
+			ImGui::InputScalar("##BaseAddressForHex", ImGuiDataType_U64, &baseAddr, 0, 0, 0);
+			ImGui::SameLine();
+			
+			if (ImGui::Button(">", ImVec2(sizes.hexCharWidth + 6, 0)))
+			{
+				if (baseAddr < ((size_t)-1)  - 2*memSize + 1)
+					baseAddr += memSize;
+				else
+					baseAddr = (size_t) - memSize + 1;
+			}
+			
+
+			if (ImGui::SliderInt("Page", &pageNumber, 1, totalPages))
+			{
+				baseAddr = 0;
+			}
+
+			if (ImGui::Button("nextPage", ImVec2(100, 40)))
+			{
+				if (pageNumber < totalPages)
+					++pageNumber;
+				baseAddr = 0;
+			}
+			if (ImGui::Button("previousPage", ImVec2(100, 40)))
+			{
+				if (pageNumber > 1)
+					--pageNumber;
+				baseAddr = 0;
+			}
 		}
-		if (ImGui::Button("previousPage", ImVec2(100, 40)))
+		ImGui::EndChild();
+		
+		ImGui::SameLine();
+
+		ImGui::BeginChild("##Notations", { ImGui::GetWindowWidth() / 2, 0.f }, true);
 		{
-			--pageNumber;
-			baseAddr = 0;
-			if (pageNumber < 0)
-				pageNumber = 0;
+			char common[5];
+			int filler = '?';
+			memset(common, filler, 4);
+			ImGuiInputTextFlags commonFlags = ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_ReadOnly;
+			// ReadWrite
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorReadWrite));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorReadWrite));
+
+			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
+			ImGui::InputText("##RWexample", common, 3, commonFlags);
+			ImGui::SameLine();
+			ImGui::Text("ReadWrite memory");
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			// Read
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorRead));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorRead));
+
+			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
+			ImGui::InputText("##Rexample", common, 3, commonFlags);
+			ImGui::SameLine();
+			ImGui::Text("ReadOnly memory");
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			// Execute
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorExecute));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorExecute));
+
+			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
+			ImGui::InputText("##EXECexample", common, 3, commonFlags);
+			ImGui::SameLine();
+			ImGui::Text("Executable memory");
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+			// Committed
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorCommitted));
+			ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorCommitted));
+
+			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
+			ImGui::InputText("##COMMexample", common, 3, commonFlags);
+			ImGui::SameLine();
+			ImGui::Text("Committed memory");
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
+
+
 		}
+		ImGui::EndChild();
+
 	}
 	ImGui::EndChild();
+	
+	
 }
+
+char xxxx[2000] = "ASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasdASdasdasd";
+
 
 
 bool OppenedProgram::render()
 {
+	std::cout << (size_t)xxxx<<'\n';
+
 	std::stringstream s;
 	s << "Process: ";
 	s << currentPocessName << "##" << pid << "open and use process";
@@ -420,67 +544,71 @@ bool OppenedProgram::render()
 	ImGui::End();
 	s << "Hex";
 	
-	//ImGui::SetNextWindowSize(ImVec2(800, 600));
+	
+	// ImGui::ShowDemoWindow();
+	
+	ImGui::SetNextWindowSize(ImVec2(1000, 800));
 	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 	{
 		ImGui::PushID(pid);
 		if (pid != 0 && isOppened)
 		{
-			// ImGui::ShowDemoWindow();
-			// char testData[100] = "Throw some random chars in here";
-			// size_t testSize = 16;
-
-			// size_t memoryAddress -> use for nextQuery
 			const size_t memSize = 4000;
 			char buffer[memSize] = {};
-			char memoryFlags[memSize] = {}; // could use memset to put flag on certain range
-			void* low, *high;
+			char memoryFlags[memSize] = {};
+			void *low, *high;
 			int flags = 0;
+
 			OppenedQuery query = initVirtualQuery(handleToProcess);
-			int pageFound = 0; // found >650 pages in one test
+			int pageFound = 0;
+			Sizes ss;
+
+			// keep this for the bug report -> overflow when memoryAddress is (size_t) -1
+			// memoryAddress = std::min(memoryAddress, ((size_t)-1) - memSize + 1);
+
 			while (getNextQuery(query, low, high, flags)) // set memory flags;
 			{
 				// temporary to find some data since it the address range is really large;
-				// printed first addres and it was a 15 digit number while we work with 4000 bytes ;
-				// GL finding addresses that have data searching blindly :)))
 				++pageFound;
 				if (memoryAddress == 0 && pageFound == this->page) // change page in program.h
-					memoryAddress = (size_t)low;
+					memoryAddress = (size_t)low; // to remove this later on; now it is useful to make sure I land in a committed area
 
-				if ((size_t)low >= (size_t)memoryAddress && (size_t)low <= (size_t)memoryAddress + memSize)
+				if (memoryAddress < (size_t)high) // i have to catch memory ranges that start before memoryAddress;
 				{
-					size_t bytesToCopy = std::min((memoryAddress + memSize) - (size_t)low, (size_t)high - (size_t)low);
-					// (baseAddr+memSize - low) -> nr of bytes from low to end of buffer -> available space
-					// (high - low) -> actual size of memory -> desired space to read the entire page
+					if ((size_t)low >= memoryAddress + memSize) // out of range; skip it;
+						continue;
 					
-					//if (flags)
-					//	std::cout << "ASDASD\n";
-					//else
-					//	std::cout << "DSADSA\n";
+					/*if (flags & memQueryFlags_Read) {
+						std::cout << "Read flag is set\n";
+					}
+					if(flags & memQueryFlags_Write) {
+						std::cout << "Write flag is set\n";
+					}
+					if (flags & memQueryFlags_Execute) {
+						std::cout << "Execute flag is set\n";
+					}
+					if (flags & memQueryFlags_Comitted) {
+						std::cout << "Comitted flag is set\n";
+					}*/
+					//std::cout << "LOW:  " << (size_t)low << '\n';
+					//std::cout << "HIGH: " << (size_t)high<< '\n';
+					void* copyStart = (void*) std::max(memoryAddress, (size_t)low);
+					void* copyEnd = (void*)std::min(memoryAddress + memSize, (size_t)high);
+					// if (size_t)copyEnd < (size_t) copyStart -> overflow took place; will be fixed afterwards so me can make the bug report
+
+					size_t bytesToCopy = (size_t)copyEnd - (size_t)copyStart;
 
 					// only read if allowed
-					if(flags & memQueryFlags_Read)
-						readMemory(handleToProcess, low, bytesToCopy, buffer + (memoryAddress - (size_t)low));
-					
-					if (flags & memQueryFlags_Execute) // this found no pages...; idk couldn't test everything unfortunately
-					{									// if u see things in cmd it could be because of this; 10/10
-						if (this->page != 0)
-						{
-							this->page = 0;
-							this->memoryAddress = (size_t)low;
-						}
-						std::cout << "reached\n";
+					if (flags & memQueryFlags_Read)
+					{
+						readMemory(handleToProcess, copyStart, bytesToCopy, buffer + ((size_t)copyStart - memoryAddress));					
 					}
-					// always save flags for the hexEditor
-					memset(memoryFlags + (memoryAddress - (size_t)low), flags, bytesToCopy); // set memory flags for that range
+					memset(memoryFlags + ((size_t)copyStart - memoryAddress), flags, bytesToCopy);
 				}
+				
 			}
-			Sizes ss;
-			drawHexes(buffer, memoryFlags, memSize, ss, memoryAddress, page);
+			drawHexes(buffer, memoryFlags, memSize, ss, memoryAddress, page, pageFound);
 			
-			//ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_CharsUppercase ))  | ImGuiInputTextFlags_CallbackAlways | ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysOverwrite | ImGuiInputTextFlags_AutoSelectAll)) , hexCellCallback, &userData))
-
-
 			// void* ptr;
 			// hexLog.setError("warn", ErrorLog::ErrorType::warn);
 
@@ -496,8 +624,8 @@ bool OppenedProgram::render()
 
 		ImGui::PopID();
 	}
-	
 	ImGui::End();
+	
 
 	return oppened;
 }
