@@ -177,24 +177,11 @@ void *SearchForValue::render(PROCESS handle)
 
 
 struct Sizes {
-
-
 	unsigned int cols = 16;
 	float hexCharWidth = ImGui::CalcTextSize("F").x + 1; // width of one hexChar
 	float hexCellWidth; // width of the inputText -> used for highlight and mouseCapture in the example i think
 
 };
-
-
-//  will use it to add generals styles for the hexEditor; dont know exactly where in the code it goes :))
-//  probably anywhere between the 2 ImGui::Begin()
-//  maybe save styles and the undo style changes to not influence further windows
-void AddStyles()
-{
-	ImGuiStyle& style = ImGui::GetStyle();
-
-	
-}
 
 
 enum boxColor {
@@ -225,26 +212,24 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 {
 	ImGui::SetWindowFontScale(1.f);
 	Sizes sizes;
+	float windowWitdh = ImGui::GetWindowWidth();
+	
+	int fittingCols = (windowWitdh - 230) / 34 + 1;
+	fittingCols = std::max(1, fittingCols);
+	sizes.cols = std::min(sizes.cols, (unsigned int) fittingCols);
+	
 	size_t i, j;
 	char buf[33];
 	char asciiBuf[17];
-	const char* addressFormat = "%#0*zX";
+	const char* addressFormat = "%#016zX";
 	const char* byteFormat = "%02X";
 
-	if (sizes.cols > 16) // buf only has space for 32 chars which can only display 16 bytes in hex
+	if (sizes.cols > 16)
 		sizes.cols = 16;
 	
-	size_t lines = (memSize + sizes.cols - 1) / sizes.cols;
-	size_t addrDigits = 0;
-	size_t lastAddr = memSize + memoryAddress - 1; // use the largest address to compute digits needed for display
+	size_t lines = memSize/ sizes.cols;
 
-	while (lastAddr > 0)
-	{
-		++addrDigits;
-		lastAddr >>= 4;
-	}
-	addrDigits += 2; // add 2 more spaces for the 0X at the beginning
-	ImU8* memory = (ImU8*)memData; // byte pointer; used to copy bytes
+	ImU8* memory = (ImU8*)memData;
 	char* memoryFlags = (char*)memFlags;
 
 	ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 5.0f);
@@ -254,14 +239,14 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 		for (i = 0; i < lines; ++i)
 		{
 			size_t addr = i * sizes.cols;
-			ImGui::Text(addressFormat, addrDigits, addr + memoryAddress);
+			ImGui::Text(addressFormat, addr + memoryAddress);
 			ImGui::SameLine();
 			ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 
 			for (j = 0; j < sizes.cols && addr + j < memSize; ++j)
 			{
 				ImGui::SameLine();
-				ImGui::PushID(sizes.cols * i + j); // push a hexCell ID
+				ImGui::PushID(sizes.cols * i + j);
 
 				// set general flags for every situation
 				ImGuiInputTextFlags flags = ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_AlwaysOverwrite |
@@ -324,26 +309,6 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 				ImGui::PopID();
 			}
 			ImGui::SameLine();
-			
-			memset(buf, '?', 33);
-			for (size_t dif = j; dif < sizes.cols; ++dif) // this only fills the last line if memSize not divisible by nrCols
-			{
-				ImGui::PushID(sizes.cols * i + j); // push a hexCell ID
-				ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32(0xff42f2f5)); /// Alpha, Blue, Green, Red
-				ImGui::PushStyleColor(ImGuiCol_Text, ImU32(0xff000000));
-
-				ImGuiInputTextFlags flags = ImGuiInputTextFlags_NoHorizontalScroll | ImGuiInputTextFlags_ReadOnly; 			
-
-				ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
-				std::cout << "asdads";
-				ImGui::InputText("##hexCell", buf, 3, flags);
-
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopID();
-				ImGui::SameLine();
-			}
-			
 			ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 			ImGui::SameLine();
 
@@ -354,7 +319,7 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 				if (asciiBuf[poz] < 32 || asciiBuf[poz] > 126)
 					asciiBuf[poz] = '.' ;
 			}
-
+			asciiBuf[sizes.cols] = 0; // add an early ending if the window is small
 			ImGui::Text("%s", asciiBuf);
 
 		}
@@ -418,22 +383,22 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 
 			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
 			ImGui::InputText("##RWexample", common, 3, commonFlags);
-			ImGui::SameLine();
-			ImGui::Text("ReadWrite memory");
 
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			ImGui::Text("ReadWrite memory");
 
 			// ReadOnly
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorRead));
 			ImGui::PushStyleColor(ImGuiCol_Text, ImU32((unsigned int)txtColorRead));
 
 			ImGui::Text(" %c%c", buf[0], buf[1]);
-			ImGui::SameLine();
-			ImGui::Text("ReadOnly memory");
 
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			ImGui::Text("ReadOnly memory");
 
 
 			// Committed
@@ -442,11 +407,11 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 
 			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
 			ImGui::InputText("##COMMexample", common, 3, commonFlags);
-			ImGui::SameLine();
-			ImGui::Text("Committed memory");
 
 			ImGui::PopStyleColor();
 			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			ImGui::Text("Committed memory");
 
 			// Uncommitted
 			ImGui::PushStyleColor(ImGuiCol_FrameBg, ImU32((unsigned int)boxColorUncommitted));
@@ -454,12 +419,11 @@ void OppenedProgram::drawHexes(void* memData, void* memFlags, size_t memSize)
 
 			ImGui::SetNextItemWidth(sizes.hexCharWidth * 2 + 5);
 			ImGui::InputText("##UNCOMMexample", common, 3, commonFlags);
+
+			ImGui::PopStyleColor();
+			ImGui::PopStyleColor();
 			ImGui::SameLine();
 			ImGui::Text("Uncommitted memory");
-
-			ImGui::PopStyleColor();
-			ImGui::PopStyleColor();
-
 		}
 		ImGui::EndChild();
 
@@ -549,9 +513,8 @@ bool OppenedProgram::render()
 	s << "Hex";
 	
 	
-	//ImGui::ShowDemoWindow();
 	// hex editor
-	ImGui::SetNextWindowSize(ImVec2(1000, 800));
+	ImGui::SetNextWindowSize(ImVec2(800, 700), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
 	{
 		ImGui::PushID(pid);
@@ -591,9 +554,6 @@ bool OppenedProgram::render()
 			}
 			
 			drawHexes(buffer, memoryFlags, memSize);
-			
-			// void* ptr;
-			// hexLog.setError("warn", ErrorLog::ErrorType::warn);
 
 		}
 		else
