@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "errorLogging.h"
+#include "definitions.h"
 
 struct HexEditor
 {

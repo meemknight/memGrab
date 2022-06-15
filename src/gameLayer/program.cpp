@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <imgui_internal.h>
+#include "virtualQueryApi.h"
 
 #undef min
 #undef max

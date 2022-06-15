@@ -1,7 +1,8 @@
-#include "program.h"
+#include "hexEditor.h"
 #include "imgui_internal.h"
 #include "systemFunctions.h"
 #include <algorithm>
+#include "virtualQueryApi.h"
 
 enum boxColor
 {
