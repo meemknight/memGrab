@@ -145,8 +145,9 @@ bool gameLogic(float deltaTime)
 			}
 		}
 
-		ImGui::End();
 	}
+	ImGui::End();
+
 
 	//ImGui::ShowDemoWindow();
 

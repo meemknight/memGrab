@@ -8,6 +8,7 @@
 #define MAX_PATH_COMMON 256
 
 #if defined WIN32 || defined _WIN32 || defined __WIN32__ || defined __NT__
+#define NOMINMAX
 #include <Windows.h>
 
 using PID = DWORD;
@@ -26,6 +27,8 @@ using PROCESS = HANDLE;
 #define IM_PRIu64   "llu"
 #define IM_PRIx64   "llX"
 #endif
+
+#include "hexEditor.h"
 
 enum Types
 {
@@ -228,16 +231,12 @@ struct OppenedProgram
 	char currentPocessName[256] = {};
 	ErrorLog writeLog;
 	ErrorLog errorLog;
-	ErrorLog hexLog;
 	SearchForValue searcher;
-	size_t memoryAddress = 0;
-	
-	int scrollTopBot = 0; // 1 = up; 0 = nothing; -1 = botom
+	HexEditor hexEditor = {};
 	
 
 	bool isAlieve();
 	bool render();
 	void close();
-	void drawHexes(void* memData, void* memFlags, size_t memSize);
 };
 
