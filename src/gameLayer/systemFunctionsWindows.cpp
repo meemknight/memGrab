@@ -67,30 +67,7 @@ std::string getLastErrorString()
 	return message;
 }
 
-void writeMemory(PROCESS process, void* ptr, void* data, size_t size, ErrorLog& errorLog)
-{
 
-	errorLog.clearError();
-
-	BOOL writeSucceeded = WriteProcessMemory(
-		process,
-		ptr,
-		data,
-		size,
-		NULL);
-
-	if (!writeSucceeded)
-	{
-		errorLog.setError(getLastErrorString().c_str());
-	}
-
-}
-
-bool readMemory(PROCESS process, void *start, size_t size, void *buff)
-{
-	SIZE_T readSize = 0;
-	return ReadProcessMemory(process, start, buff, size, &readSize);
-}
 
 
 bool isProcessAlive(PROCESS process)
