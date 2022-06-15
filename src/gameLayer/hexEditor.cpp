@@ -284,8 +284,7 @@ void HexEditor::render(PROCESS handleToProcess, PID pid, const std::string &proc
 
 			OppenedQuery query = initVirtualQuery(handleToProcess);
 
-			// keep this for the bug report -> overflow when memoryAddress is (size_t) -1
-			// memoryAddress = std::min(memoryAddress, ((size_t)-1) - memSize + 1);
+			memoryAddress = std::min(memoryAddress, ((size_t)-1) - memSize + 1);
 
 			while (getNextQuery(query, low, high, flags)) // set memory flags;
 			{

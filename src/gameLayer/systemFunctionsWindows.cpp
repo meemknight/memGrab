@@ -68,8 +68,6 @@ std::string getLastErrorString()
 }
 
 
-
-
 bool isProcessAlive(PROCESS process)
 {
 	DWORD exitCode = 0;
