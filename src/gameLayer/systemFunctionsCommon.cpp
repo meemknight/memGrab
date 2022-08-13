@@ -1,5 +1,5 @@
 #include "systemFunctions.h"
-#include "imgui.h"
+#include "imguiComboSearch.h"
 #include <vector>
 #include <algorithm>
 
@@ -53,13 +53,21 @@ std::string printAllProcesses(PID& pid)
 		lastItemCurrent = itemCurrent;
 	}
 
-	ImGui::Combo("##processes list box", &itemCurrent,
-		[](void* data, int idx, const char** out_text)
+	//ImGui::Combo("##processes list box", &itemCurrent,
+	//	[](void* data, int idx, const char** out_text)
+	//{
+	//	*out_text = (*((const std::vector<std::pair<std::string, PID>>*)data))[idx].first.c_str(); return true;
+	//}
+	//	,
+	//	&processes, processes.size());
+
+	std::vector<const char *> processesString;
+	processesString.reserve(processes.size());
+	for (auto &i : processes)
 	{
-		*out_text = (*((const std::vector<std::pair<std::string, PID>>*)data))[idx].first.c_str(); return true;
+		processesString.push_back(i.first.c_str());
 	}
-		,
-		&processes, processes.size());
+	ImGui::ComboWithFilter("##processes list box", &itemCurrent, processesString);
 
 	ImGui::PopID();
 
@@ -137,7 +145,8 @@ std::string printAllWindows(PID& pid)
 		lastItemCurrent = itemCurrent;
 	}
 
-	ImGui::Combo("##windows list box", &itemCurrent, &processesNames[0], index);
+	//ImGui::Combo("##windows list box", &itemCurrent, &processesNames[0], index);
+	ImGui::ComboWithFilter("##windows list box", &itemCurrent, processesNames);
 
 	ImGui::PopID();
 
