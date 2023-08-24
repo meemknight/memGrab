@@ -244,37 +244,37 @@ bool getNextQuery(OppenedQuery &query, void *&low, void *&hi, int &flags)
 		
 		if (memInfo.State == MEM_COMMIT)
 		{
-			if (memInfo.Protect | PAGE_READONLY)
+			if (memInfo.Protect & PAGE_READONLY)
 			{
 				flags |= memQueryFlags_Read;
 			}
 
-			if (memInfo.Protect | PAGE_READWRITE)
+			if (memInfo.Protect & PAGE_READWRITE)
 			{
 				flags |= (memQueryFlags_Read | memQueryFlags_Write);
 			}
 
-			if (memInfo.Protect | PAGE_EXECUTE)
+			if (memInfo.Protect & PAGE_EXECUTE)
 			{
 				flags |= memQueryFlags_Execute;
 			}
 
-			if (memInfo.Protect | PAGE_EXECUTE_READ)
+			if (memInfo.Protect & PAGE_EXECUTE_READ)
 			{
 				flags |= (memQueryFlags_Execute | memQueryFlags_Read);
 			}
 
-			if (memInfo.Protect | PAGE_EXECUTE_READWRITE)
+			if (memInfo.Protect & PAGE_EXECUTE_READWRITE)
 			{
 				flags |= (memQueryFlags_Execute | memQueryFlags_Read | memQueryFlags_Write);
 			}
 
-			if (memInfo.Protect | PAGE_EXECUTE_WRITECOPY)
+			if (memInfo.Protect & PAGE_EXECUTE_WRITECOPY)
 			{
 				flags |= (memQueryFlags_Execute | memQueryFlags_Read);
 			}
 
-			if (memInfo.Protect | PAGE_WRITECOPY)
+			if (memInfo.Protect & PAGE_WRITECOPY)
 			{
 				flags |= memQueryFlags_Read;
 			}
