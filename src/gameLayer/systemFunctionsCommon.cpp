@@ -202,7 +202,7 @@ std::vector<void *> findBytePatternInProcessMemory(PROCESS process, void *patter
 		if ((flags | memQueryFlags_Read) && (flags | memQueryFlags_Write))
 		{
 			//search for our byte patern
-			size_t size = (char *)hi - (char *)low + 1;
+			size_t size = (char *)hi - (char *)low;
 			char *localCopyContents = new char[size];
 			if (
 				readMemory(process, low, size, localCopyContents)
