@@ -1,0 +1,7 @@
+Determining if the include file pthread.h exists failed with the following output:
+Change Dir: /media/sf_shared/repos/memGrab/CMakeFiles/CMakeTmp
+
+Run Build Command(s):/usr/bin/gmake cmTC_58ead/fast && gmake: *** No rule to make target 'cmTC_58ead/fast'.  Stop.
+
+
+

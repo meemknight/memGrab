@@ -40,7 +40,6 @@ PID findPidByName(const char* name)
 }
 
 
-
 //https://stackoverflow.com/questions/1387064/how-to-get-the-error-message-from-the-error-code-returned-by-getlasterror
 std::string getLastErrorString()
 {
@@ -69,7 +68,6 @@ std::string getLastErrorString()
 
 void writeMemory(PROCESS process, void* ptr, void* data, size_t size, ErrorLog& errorLog)
 {
-
 	errorLog.clearError();
 
 	BOOL writeSucceeded = WriteProcessMemory(
@@ -91,7 +89,6 @@ bool readMemory(PROCESS process, void *start, size_t size, void *buff)
 	SIZE_T readSize = 0;
 	return ReadProcessMemory(process, start, buff, size, &readSize);
 }
-
 
 bool isProcessAlive(PROCESS process)
 {
@@ -247,29 +244,39 @@ bool getNextQuery(OppenedQuery &query, void *&low, void *&hi, int &flags)
 		
 		if (memInfo.State == MEM_COMMIT)
 		{
-			//good page
-
-			if (flags)
+			if (memInfo.Protect | PAGE_READONLY)
 			{
-				if (memInfo.Protect == PAGE_READONLY)
-				{
-					flags = memQueryFlags_Read;
-				}
-				else if (memInfo.Protect == PAGE_READWRITE)
-				{
-					flags = (memQueryFlags_Read | memQueryFlags_Write);
-				}
-				else if (memInfo.Protect == PAGE_EXECUTE)
-				{
-					flags = memQueryFlags_Execute;
-				}else if (memInfo.Protect == PAGE_EXECUTE_READ)
-				{
-					flags = (memQueryFlags_Execute | memQueryFlags_Read);
-				}
-				else if (memInfo.Protect == PAGE_EXECUTE_READWRITE)
-				{
-					flags = (memQueryFlags_Execute | memQueryFlags_Read | memQueryFlags_Write);
-				}
+				flags |= memQueryFlags_Read;
+			}
+
+			if (memInfo.Protect | PAGE_READWRITE)
+			{
+				flags |= (memQueryFlags_Read | memQueryFlags_Write);
+			}
+
+			if (memInfo.Protect | PAGE_EXECUTE)
+			{
+				flags |= memQueryFlags_Execute;
+			}
+
+			if (memInfo.Protect | PAGE_EXECUTE_READ)
+			{
+				flags |= (memQueryFlags_Execute | memQueryFlags_Read);
+			}
+
+			if (memInfo.Protect | PAGE_EXECUTE_READWRITE)
+			{
+				flags |= (memQueryFlags_Execute | memQueryFlags_Read | memQueryFlags_Write);
+			}
+
+			if (memInfo.Protect | PAGE_EXECUTE_WRITECOPY)
+			{
+				flags |= (memQueryFlags_Execute | memQueryFlags_Read);
+			}
+
+			if (memInfo.Protect | PAGE_WRITECOPY)
+			{
+				flags |= memQueryFlags_Read;
 			}
 
 			low = memInfo.BaseAddress;

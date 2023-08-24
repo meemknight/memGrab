@@ -41,7 +41,6 @@ enum
 	memQueryFlags_Write		= 0b0010,
 	memQueryFlags_Execute	= 0b0100,
 
-
 };
 
 #if defined WIN32 || defined _WIN32 || defined __WIN32__ || defined __NT__
@@ -50,7 +49,10 @@ struct OppenedQuery
 {
 	PROCESS queriedProcess = 0;
 	char *baseQueriedPtr = (char *)0x0;
-	bool oppened() { return queriedProcess != 0; }
+	bool oppened() 
+	{ 
+		return queriedProcess != 0; 
+	}
 };
 
 #endif

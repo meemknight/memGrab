@@ -248,49 +248,54 @@ bool OppenedProgram::render()
 
 	ImGui::End();
 
-	s << "Hex";
 
-	if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoSavedSettings))
+#pragma region hex
+	if (0)
 	{
-		ImGui::PushID(pid);
-		if (pid != 0 && isOppened)
+		s << "Hex";
+
+		if (ImGui::Begin(s.str().c_str(), &oppened, ImGuiWindowFlags_NoSavedSettings))
 		{
-			ImGui::Text("hex editor goes here");
-
-			ImGui::BeginGroup();
-
-
-			for (int i = 0; i < 10; i++)
+			ImGui::PushID(pid);
+			if (pid != 0 && isOppened)
 			{
+				//ImGui::Text("hex editor goes here");
 
-				for (int i = 0; i < 16; i++)
+				ImGui::BeginGroup();
+
+				for (int i = 0; i < 10; i++)
 				{
-					ImGui::Text("%c%c ", 'a' + i, 'a' + i);
-					if (i < 15) { ImGui::SameLine(); }
+
+					for (int i = 0; i < 16; i++)
+					{
+						ImGui::Text("%c%c ", 'a' + i, 'a' + i);
+						if (i < 15) { ImGui::SameLine(); }
+					}
+
 				}
 
+				hexLog.setError("warn", ErrorLog::ErrorType::warn);
+
+				ImGui::EndGroup();
+
+			}
+			else
+			{
+				ImGui::Text("Process name: %s", currentPocessName);
 			}
 
-			void *ptr;
+			hexLog.renderText();
 
-			hexLog.setError("warn", ErrorLog::ErrorType::warn);
+			ImGui::NewLine();
 
-			ImGui::EndGroup();
-
-		}
-		else
-		{
-			ImGui::Text("Process name: %s", currentPocessName);
+			ImGui::PopID();
 		}
 
-		hexLog.renderText();
-
-		ImGui::NewLine();
-
-		ImGui::PopID();
+		ImGui::End();
 	}
-	
-	ImGui::End();
+
+#pragma endregion
+
 
 	return oppened;
 }

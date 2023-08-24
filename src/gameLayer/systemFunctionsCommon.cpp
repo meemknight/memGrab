@@ -190,7 +190,7 @@ std::vector<void *> findBytePatternInProcessMemory(PROCESS process, void *patter
 
 	auto query = initVirtualQuery(process);
 
-	if (!query.oppened());
+	if (!query.oppened())
 		return {};
 
 	void *low = nullptr;
